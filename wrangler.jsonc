@@ -1,0 +1,11 @@
+{
+  // Despliegue como Worker de SOLO estáticos (Static Assets), sin OpenNext.
+  // La app es un export estático de Next (`output: 'export'` → carpeta `out/`).
+  "name": "interview-prep",
+  "compatibility_date": "2025-05-01",
+  "assets": {
+    "directory": "./out",
+    // Sirve out/404.html cuando no hay coincidencia.
+    "not_found_handling": "404-page"
+  }
+}
