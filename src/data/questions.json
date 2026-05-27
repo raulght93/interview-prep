@@ -1,0 +1,747 @@
+{
+  "topics": [
+    { "id": "ia", "emoji": "🤖", "name": "IA / LLMs", "description": "Uso de IA en el día a día, qué es un LLM, precauciones.", "risk": "bajo" },
+    { "id": "java", "emoji": "☕", "name": "Java / Funcional", "description": "Streams, interfaces, lambdas, clases abstractas.", "risk": "bajo" },
+    { "id": "spring", "emoji": "🌱", "name": "Spring / Boot / MVC", "description": "Controller, JPA, Batch, ViewResolver.", "risk": "bajo" },
+    { "id": "arch", "emoji": "🏗️", "name": "Arquitectura / DDD / Hexagonal", "description": "Bounded contexts, capas, eventos.", "risk": "medio" },
+    { "id": "rest", "emoji": "🌐", "name": "REST / HTTP / OpenAPI", "description": "Content-Type, verbos, OpenAPI, status codes.", "risk": "bajo" },
+    { "id": "sec", "emoji": "🔐", "name": "Seguridad / JWT", "description": "JWT, claims, autenticación vs autorización.", "risk": "bajo" },
+    { "id": "cors", "emoji": "🌍", "name": "CORS / Status codes", "description": "CORS, errores 401/403/404/500.", "risk": "bajo" },
+    { "id": "async", "emoji": "🔄", "name": "Async / Reactivo / Concurrencia", "description": "Sync vs async vs reactive, thread safety.", "risk": "medio" },
+    { "id": "msg", "emoji": "📨", "name": "Colas / Brokers / Eventos", "description": "Kafka, SQS, RabbitMQ, topics vs queues.", "risk": "bajo" },
+    { "id": "db", "emoji": "🗄️", "name": "Bases de datos / SQL / Modelado", "description": "Relacionales, N:M, normalización, índices.", "risk": "alto" },
+    { "id": "sql", "emoji": "🧮", "name": "SQL práctico / Joins", "description": "Joins, cardinalidades, ORDER BY, HAVING.", "risk": "alto" },
+    { "id": "perf", "emoji": "⚙️", "name": "Optimización SQL / Planes de ejecución", "description": "PreparedStatement, planes, índices.", "risk": "alto" },
+    { "id": "test", "emoji": "🧪", "name": "Testing / TDD / Clean Code", "description": "TDD, mock vs spy, integración, carga, SOLID, clean code.", "risk": "medio" },
+    { "id": "redis", "emoji": "🧱", "name": "Redis / Caché", "description": "Estructuras, TTL, patrones de caché, locks, pub/sub.", "risk": "medio" },
+    { "id": "contracts", "emoji": "📜", "name": "OpenAPI / AsyncAPI / Contratos", "description": "Contract-first, codegen, AsyncAPI, schema registry, versionado.", "risk": "bajo" },
+    { "id": "xp", "emoji": "💼", "name": "Tu experiencia / Stack real", "description": "Respuestas personales ancladas a tu CV + proyecto Agata. Personalízalas y sé honesto.", "risk": "alto" }
+  ],
+  "questions": [
+    {
+      "id": "ia-1", "topicId": "ia", "tags": ["llm", "fundamentos"], "difficulty": "easy",
+      "question": "¿Qué es un LLM?",
+      "answer": "Un **Large Language Model** es un modelo de IA basado en arquitectura **Transformer**, entrenado sobre grandes corpus de texto para predecir el **siguiente token** dada una secuencia. Características clave: parámetros (millones a billones), **context window** (cuántos tokens puede procesar a la vez), tokenización, generación autoregresiva, fine-tuning posterior con RLHF para alineamiento."
+    },
+    {
+      "id": "ia-2", "topicId": "ia", "tags": ["uso"], "difficulty": "easy",
+      "question": "¿Qué estás haciendo ahora mismo con IA en tu entorno laboral?",
+      "answer": "Respuesta personal — prepara una real. Ejemplos típicos: asistente de programación (Copilot, Claude Code) para autocompletado, refactor, generación de tests; exploración de APIs/librerías desconocidas; revisión de pull requests; redacción técnica (docs, ADRs); generación de datos de prueba; debugging acompañado. **Importante**: di siempre lo que aporta y lo que NO delegas (decisiones de arquitectura, revisión final, seguridad)."
+    },
+    {
+      "id": "ia-3", "topicId": "ia", "tags": ["uso", "refactor"], "difficulty": "easy",
+      "question": "¿Cómo estás usando ChatGPT o herramientas de IA para refactorizar o resolver problemas técnicos?",
+      "answer": "Patrones útiles: (1) **pair programming** explicándole el contexto y dejándole proponer; (2) **rubber duck mejorado** — explico el problema y me obliga a estructurar; (3) **refactor con tests** — primero tests, luego refactor sugerido por IA, ejecutar tests; (4) **exploración** de APIs/librerías nuevas con ejemplos; (5) **análisis de logs/stacktrace** pegándole el error. Siempre revisar el output."
+    },
+    {
+      "id": "ia-4", "topicId": "ia", "tags": ["seguridad", "privacidad"], "difficulty": "medium",
+      "question": "¿Qué precauciones tienes al usar IA con código de una empresa privada?",
+      "answer": "1. **No pegar código propietario** en chats públicos (ChatGPT free, etc.); usar tooling corporativo (Copilot Enterprise, Claude for Work) con acuerdo de no-training. 2. **No incluir secretos** (API keys, datos personales, credenciales) ni siquiera en prompts. 3. **Revisar siempre** el código generado: puede inventar APIs, métodos, dependencias (hallucinations). 4. **Verificar licencias** del código sugerido. 5. **Política de la empresa**: cumplir lo que permita la organización (algunas empresas restringen herramientas). 6. **Auditoría**: dejar trazabilidad de qué se generó con IA si la política lo exige."
+    },
+    {
+      "id": "java-1", "topicId": "java", "tags": ["streams", "funcional"], "difficulty": "easy",
+      "question": "¿Cuál es la diferencia entre stream, map y flatMap?",
+      "answer": "- **`stream()`** convierte una colección en un `Stream<T>` para operaciones funcionales encadenadas (intermedias + terminal).\n- **`map(Function<T,R>)`** transforma cada elemento: `Stream<T>` → `Stream<R>` (1 a 1).\n- **`flatMap(Function<T, Stream<R>>)`** transforma cada elemento en un Stream y los **aplana**: `Stream<T>` → `Stream<Stream<R>>` → `Stream<R>`.\n\nEjemplo: tienes `List<Pedido>` y cada Pedido tiene `List<Linea>`. Para sacar todas las líneas: `pedidos.stream().flatMap(p -> p.getLineas().stream())`. Con `map` tendrías `Stream<List<Linea>>`."
+    },
+    {
+      "id": "java-2", "topicId": "java", "tags": ["streams", "collect"], "difficulty": "easy",
+      "question": "Después de aplicar un map o flatMap, ¿aplicarías un collect? ¿Para qué sirve collect?",
+      "answer": "Sí, **si quieres materializar el resultado** en una colección. `collect` es una operación **terminal** que reduce el stream a un resultado usando un `Collector`. Ejemplos: `Collectors.toList()`, `toSet()`, `toMap()`, `groupingBy()`, `joining()`, `counting()`. Sin una operación terminal el stream **no se ejecuta** (lazy)."
+    },
+    {
+      "id": "java-3", "topicId": "java", "tags": ["interfaces", "funcional"], "difficulty": "medium",
+      "question": "¿Qué te da una interfaz funcional que no te da una interfaz normal?",
+      "answer": "Una **interfaz funcional** tiene **exactamente un método abstracto** (puede tener defaults y statics). Permite usar **lambdas** y **referencias a métodos** donde se espera esa interfaz: `Function<T,R>`, `Predicate<T>`, `Consumer<T>`, `Supplier<T>`, `Runnable`, `Comparator<T>`. Se marca opcionalmente con `@FunctionalInterface` (el compilador valida). Sin esa propiedad no puedes pasarle un lambda."
+    },
+    {
+      "id": "java-4", "topicId": "java", "tags": ["interfaces"], "difficulty": "easy",
+      "question": "¿Qué es una interfaz? ¿Se extiende o se implementa?",
+      "answer": "Una **interfaz** es un contrato: define qué métodos debe ofrecer una clase, sin estado. Una clase la **implementa** (`implements`). Una interfaz **extiende** otra interfaz (`extends`, incluso múltiples). En Java moderno puede tener métodos `default`, `static`, `private` y constantes."
+    },
+    {
+      "id": "java-5", "topicId": "java", "tags": ["interfaces", "abstract"], "difficulty": "medium",
+      "question": "¿Qué diferencia hay entre una interfaz y una clase abstracta? ¿Cuándo usarías cada una?",
+      "answer": "**Interfaz**: contrato puro (con defaults), sin estado de instancia, multi-herencia, todos los métodos públicos. **Clase abstracta**: puede tener **estado** (campos), constructores, métodos protegidos/privados, lógica compartida; **herencia simple**.\n\n- Usa **interfaz** cuando defines un comportamiento que múltiples clases no relacionadas implementan (`Runnable`, `Comparable`).\n- Usa **clase abstracta** cuando hay una jerarquía con código compartido y estado común (template method, por ejemplo)."
+    },
+    {
+      "id": "java-6", "topicId": "java", "tags": ["abstract"], "difficulty": "easy",
+      "question": "¿Se puede instanciar directamente una clase abstracta?",
+      "answer": "**No**. Sólo se puede instanciar una subclase concreta. Puedes hacer `new ClaseAbstracta() { ... }` (clase anónima) sobrescribiendo los métodos abstractos, pero eso ya es crear una subclase implícita."
+    },
+    {
+      "id": "spring-1", "topicId": "spring", "tags": ["mvc"], "difficulty": "medium",
+      "question": "¿Para qué sirve un ViewResolver?",
+      "answer": "En Spring MVC, un **`ViewResolver`** traduce el **nombre lógico de vista** que devuelve un `@Controller` (por ejemplo `\"home\"`) a un objeto `View` concreto que renderiza (JSP, Thymeleaf, FreeMarker...). Lo común: `InternalResourceViewResolver` con prefix `/WEB-INF/views/` y suffix `.jsp`. En APIs REST con `@RestController` **no se usa** porque el contenido se serializa directamente (JSON/XML)."
+    },
+    {
+      "id": "spring-2", "topicId": "spring", "tags": ["controller"], "difficulty": "easy",
+      "question": "¿Qué diferencia hay entre un @Controller y un @RestController? ¿Cuándo usar cada uno?",
+      "answer": "**`@RestController` = `@Controller` + `@ResponseBody`** aplicado a todos los métodos. Es decir, sus retornos se serializan al body de la respuesta (JSON normalmente) en lugar de resolverse como nombre de vista.\n\n- `@Controller` → app web tradicional con vistas (Thymeleaf, JSP).\n- `@RestController` → API REST que devuelve JSON/XML."
+    },
+    {
+      "id": "spring-3", "topicId": "spring", "tags": ["controller", "verbos"], "difficulty": "easy",
+      "question": "¿Se puede definir un GET, PATCH, POST o PUT en un @Controller?",
+      "answer": "**Sí**. `@Controller` admite los mismos verbos (`@GetMapping`, `@PostMapping`, etc.) que `@RestController`. La diferencia está en cómo se interpreta el retorno (vista vs body). Puedes incluso poner `@ResponseBody` en métodos concretos de un `@Controller` y se comportan como REST."
+    },
+    {
+      "id": "spring-4", "topicId": "spring", "tags": ["jpa", "hibernate"], "difficulty": "easy",
+      "question": "¿Cómo puedo ejecutar una query nativa en Hibernate/Spring Data?",
+      "answer": "Con **`@Query`** y `nativeQuery = true` en el repositorio:\n```java\n@Query(value = \"SELECT * FROM usuarios WHERE email = ?1\", nativeQuery = true)\nUsuario findByEmailNative(String email);\n```\nTambién con `EntityManager.createNativeQuery(...)`. Usar cuando la query no se puede expresar bien en JPQL (CTE, dialecto específico, hints)."
+    },
+    {
+      "id": "spring-5", "topicId": "spring", "tags": ["batch"], "difficulty": "medium",
+      "question": "¿Hay procesos Spring Batch? ¿Cómo gestionas o programas los procesos batch?",
+      "answer": "**Spring Batch** es el framework para procesos masivos: `Job` → `Step` → (`ItemReader` → `ItemProcessor` → `ItemWriter`), con **chunks** y **commit interval**, gestión de estado en `JobRepository`, reinicios, listeners.\n\nPara **programarlos**:\n- `@Scheduled(cron=\"...\")` para tareas simples in-process.\n- **Quartz** para scheduling más complejo (clusters, persistencia).\n- **ShedLock** para coordinar `@Scheduled` en entornos distribuidos (que sólo una instancia lo ejecute).\n- Triggers externos: Kubernetes CronJob, AWS EventBridge, Jenkins."
+    },
+    {
+      "id": "arch-1", "topicId": "arch", "tags": ["diseño"], "difficulty": "medium",
+      "question": "Si te doy 4 o 5 requisitos, ¿qué haces para plantear la solución?",
+      "answer": "1. **Entender el dominio**: lenguaje ubicuo, actores, casos de uso. 2. Identificar **capacidades de negocio** y posibles **bounded contexts**. 3. Definir las **entidades de dominio** y agregados (consistencia). 4. Elegir **estilo de integración** (sync REST vs async eventos según acoplo y latencia). 5. Definir **contratos** (OpenAPI/AsyncAPI). 6. Pensar **persistencia** por contexto. 7. **NFRs**: consistencia, latencia, throughput, observabilidad. 8. Dibujar capas (hexagonal): dominio → casos de uso → adapters. 9. Iterar y validar con el equipo de producto."
+    },
+    {
+      "id": "arch-2", "topicId": "arch", "tags": ["eventos"], "difficulty": "medium",
+      "question": "¿Orientas tu sistema a eventos o eso es un plus sobre tu sistema?",
+      "answer": "Depende. **Eventos como plus**: el sistema sigue siendo sync REST como base, y los eventos sirven para integraciones secundarias (notificaciones, auditoría, side effects). **Event-driven nativo**: el flujo principal se diseña en torno a eventos (event sourcing, sagas), buscando desacoplo, escalabilidad y eventual consistency. Lo importante: justificarlo por el problema (escalado, desacoplo, side effects), no por moda. La complejidad operacional sube (idempotencia, orden, replay, observabilidad)."
+    },
+    {
+      "id": "arch-3", "topicId": "arch", "tags": ["ddd", "proyecciones"], "difficulty": "hard",
+      "question": "Tienes dos entidades de dominio en bounded contexts separados y necesitas una proyección de datos de ambos. ¿Dónde la haces?",
+      "answer": "**No la haces en el dominio de ninguno de los dos** (acoplaría contextos). Opciones:\n1. **Read model dedicado** (CQRS): un servicio/vista que consume eventos de ambos BCs y mantiene su propia proyección (sql/nosql). Es la respuesta clásica.\n2. **BFF / API de agregación** que llama a ambos servicios y compone la respuesta (más simple, peor para datasets grandes).\n3. **Anti-corruption layer** si los modelos chocan.\n\nLa clave: la proyección vive en su propio espacio, no contamina el modelo de los dominios originales."
+    },
+    {
+      "id": "arch-4", "topicId": "arch", "tags": ["ddd", "bounded-context"], "difficulty": "medium",
+      "question": "¿Cuál es tu regla para separar bounded contexts? Si tienen ciclos de vida distintos, ¿los separarías por algún otro concepto?",
+      "answer": "Criterios principales: **lenguaje ubicuo** (la misma palabra significa cosas distintas en cada lado → contexto distinto), **ownership de equipo**, **capacidad de negocio** (Catálogo, Pagos, Pedidos), **independencia de despliegue** y **ciclo de vida**.\n\nMás allá del ciclo de vida: **frecuencia de cambio**, **consistencia requerida** (lo que necesita transaccionalidad fuerte va junto), **dependencias de datos**, **NFRs muy distintos** (uno necesita latencia ms y otro batch nocturno), **regulación/compliance** (PII, PCI separadas)."
+    },
+    {
+      "id": "arch-5", "topicId": "arch", "tags": ["hexagonal"], "difficulty": "medium",
+      "question": "¿En qué capa meterías un REST controller en arquitectura hexagonal? ¿Y un OpenAPI?",
+      "answer": "El **REST controller** es un **adapter de entrada** (driving adapter), en la capa de **infraestructura/adapters**. Llama a un **puerto de entrada** (use case / application service) que vive en la capa de aplicación. El dominio no sabe nada de HTTP.\n\nEl **OpenAPI** es el **contrato del borde**, en la capa de infraestructura/adapters. Patrón habitual: generar la **interfaz Java** desde el YAML con `openapi-generator`; el controller la **implementa**. Así el contrato manda y el código se adapta."
+    },
+    {
+      "id": "rest-1", "topicId": "rest", "tags": ["content-type"], "difficulty": "easy",
+      "question": "¿Cuál es el Content-Type de una petición/respuesta REST cuando devuelves un 200? ¿Qué tipo de contenido puede devolver?",
+      "answer": "**No hay uno fijo**: depende de lo que devuelvas. Lo más habitual en APIs REST: **`application/json`**. Pero un servicio REST puede devolver cualquier tipo: `application/xml`, `text/plain`, `text/html`, `application/pdf`, `image/png`, `application/octet-stream`, `multipart/form-data` (raro como respuesta), etc. El Content-Type **describe el media type del body**."
+    },
+    {
+      "id": "rest-2", "topicId": "rest", "tags": ["content-type"], "difficulty": "easy",
+      "question": "¿Dónde se define el Content-Type?",
+      "answer": "En el **header HTTP `Content-Type`** de la petición o respuesta. En Spring: anotaciones `consumes` (qué acepta el endpoint) y `produces` (qué devuelve) en `@RequestMapping`/`@GetMapping`/etc. También se puede negociar con el header `Accept` del cliente (content negotiation)."
+    },
+    {
+      "id": "rest-3", "topicId": "rest", "tags": ["content-type"], "difficulty": "easy",
+      "question": "¿Para qué sirven application/json, text/plain y multipart/form-data?",
+      "answer": "- **`application/json`**: payloads JSON, el formato estándar de APIs REST modernas.\n- **`text/plain`**: texto plano sin formato (logs, mensajes simples).\n- **`multipart/form-data`**: envío de **formularios con ficheros** o campos mixtos. Cada parte tiene su propio Content-Type. Es el formato típico para upload de archivos."
+    },
+    {
+      "id": "rest-4", "topicId": "rest", "tags": ["content-type"], "difficulty": "medium",
+      "question": "¿Qué problemas pueden aparecer si no defines correctamente el Content-Type? ¿Cómo estableces que tu servicio va a devolver JSON?",
+      "answer": "Problemas: el cliente **no sabe parsear** el body, el framework **elige un serializador equivocado** (devuelves XML cuando esperaban JSON), errores **415 Unsupported Media Type** o **406 Not Acceptable**, charset incorrecto (acentos rotos).\n\nForzar JSON en Spring: `@GetMapping(value=\"/x\", produces = MediaType.APPLICATION_JSON_VALUE)`. A nivel global, configurar `MessageConverters` o que Jackson sea el por defecto."
+    },
+    {
+      "id": "rest-5", "topicId": "rest", "tags": ["openapi"], "difficulty": "medium",
+      "question": "Si tienes un YAML de OpenAPI, ¿dónde defines qué devuelve cada endpoint? ¿Qué relación puede tener un REST controller con una interfaz generada desde OpenAPI?",
+      "answer": "En el bloque **`responses`** de cada operación, con códigos (`200`, `201`, `400`...) y cada uno con `content` que indica `media-type` (ej. `application/json`) y `schema` referenciando un componente.\n\nCon `openapi-generator` se genera una **interfaz Java** (modo `spring` o `spring-cloud`) con la firma de cada operación y DTOs. El **REST controller la implementa**: el contrato es la fuente de verdad, el código se adapta. Beneficios: detección temprana de breaking changes, DTOs y validaciones consistentes con el spec, cliente generable."
+    },
+    {
+      "id": "rest-6", "topicId": "rest", "tags": ["serialización"], "difficulty": "medium",
+      "question": "¿Qué tendrías que hacer si en vez de devolver JSON necesitas devolver XML con el mismo payload?",
+      "answer": "1. Añadir `jackson-dataformat-xml` (o JAXB) al classpath. 2. Configurar el mapper XML. 3. En el endpoint: `produces = { APPLICATION_JSON_VALUE, APPLICATION_XML_VALUE }`. 4. El cliente envía `Accept: application/xml` y Spring serializa con el converter correcto (**content negotiation**). 5. Los DTOs pueden necesitar anotaciones (`@JacksonXmlRootElement`, `@JacksonXmlProperty`) para nombres y atributos."
+    },
+    {
+      "id": "rest-7", "topicId": "rest", "tags": ["verbos"], "difficulty": "easy",
+      "question": "¿Qué diferencia hay entre un PUT y un PATCH?",
+      "answer": "- **PUT**: **reemplazo total** del recurso. Es **idempotente** (mismas llamadas → mismo resultado). Si omites un campo, lo borras.\n- **PATCH**: **modificación parcial**. No es necesariamente idempotente (depende de la operación: `replace` sí, `add` a una lista no). Formatos comunes: JSON Merge Patch (RFC 7396) o JSON Patch (RFC 6902)."
+    },
+    {
+      "id": "sec-1", "topicId": "sec", "tags": ["jwt"], "difficulty": "easy",
+      "question": "¿Para qué se usa un token JWT? ¿Sólo en servicios JSON o también otras cosas?",
+      "answer": "Un **JWT** transporta información firmada (y opcionalmente cifrada con JWE) entre partes. Uso típico: **autenticación/autorización stateless** — el servidor emite el token tras login y el cliente lo envía en cada petición (header `Authorization: Bearer ...`); el servidor valida la firma sin consultar sesión en BD.\n\nNo es exclusivo de JSON ni REST. Se usa para: APIs REST y gRPC, OIDC (ID tokens), single sign-on, intercambio seguro de info entre servicios, magic links, password reset tokens, webhooks firmados."
+    },
+    {
+      "id": "sec-2", "topicId": "sec", "tags": ["jwt", "claims"], "difficulty": "easy",
+      "question": "¿Qué son los claims de un JWT y para qué se usan?",
+      "answer": "Los **claims** son las **afirmaciones** del payload del JWT (el JSON central). Tipos:\n- **Registered claims** (estándar RFC 7519): `iss` (issuer), `sub` (subject), `aud` (audience), `exp` (expiration), `iat` (issued at), `nbf` (not before), `jti` (jwt id).\n- **Public claims**: definidos por el emisor pero registrados o con namespace único.\n- **Private claims**: ad-hoc entre emisor y consumidor (`role`, `tenant_id`, `email`).\n\nSe usan para identificar al sujeto, definir permisos, controlar expiración y validar el emisor."
+    },
+    {
+      "id": "sec-3", "topicId": "sec", "tags": ["jwt"], "difficulty": "medium",
+      "question": "¿Los JWT se pueden decodificar?",
+      "answer": "**Sí, cualquiera puede decodificarlos**: header y payload son Base64Url **sin cifrar**, sólo codificados. Lo que da seguridad es la **firma** (con clave simétrica HMAC o asimétrica RSA/ECDSA): el receptor la valida; si no cuadra, el token se rechaza.\n\n**Consecuencia importante**: nunca pongas datos sensibles en el payload de un JWT firmado. Si necesitas secreto, usa JWE (encrypted). Y trata el JWT como un bearer token: quien lo tiene, lo usa — protégelo (HTTPS, almacenamiento seguro, expiración corta + refresh token)."
+    },
+    {
+      "id": "cors-1", "topicId": "cors", "tags": ["cors"], "difficulty": "medium",
+      "question": "Si un front externo se conecta a tu backend y aparece un error de CORS, ¿qué está pasando? ¿Cuál es la raíz del problema?",
+      "answer": "**CORS** (Cross-Origin Resource Sharing) es un mecanismo del **navegador** que extiende la **same-origin policy**. Cuando JavaScript de un origen (`https://web-a.com`) intenta llamar a un backend de **otro origen** (`https://api-b.com`), el navegador exige que el servidor declare explícitamente que permite ese origen.\n\nSi el server **no devuelve** los headers `Access-Control-Allow-Origin` (y compañía) o el preflight `OPTIONS` falla, el navegador **bloquea la respuesta**. La raíz: el servidor no está configurado para autorizar peticiones cross-origin desde ese front.\n\nNota: la petición sí sale y el server la procesa (en requests simples); lo que bloquea el navegador es el acceso del JS a la respuesta. CORS **no es seguridad del servidor**, es protección del navegador del usuario."
+    },
+    {
+      "id": "cors-2", "topicId": "cors", "tags": ["cors"], "difficulty": "hard",
+      "question": "¿Cómo puedes forzar un error de CORS desde una web no autorizada?",
+      "answer": "Si te abres una página en el navegador (`https://otra-web.com`) y desde su JS haces `fetch('https://tu-api.com/...')`, el navegador hará la comprobación de CORS. Si tu API no incluye ese origen en `Access-Control-Allow-Origin`, el navegador **bloqueará la respuesta** y el JS verá un error CORS.\n\nPara provocarlo: una página HTML simple con un `fetch` o XHR a tu API desde un dominio que tu config no autoriza. Para requests no-simples (PUT, headers custom, JSON con Content-Type), el navegador hace **preflight OPTIONS** antes; si no responde con los allow headers correctos, ya falla ahí sin enviar la petición real."
+    },
+    {
+      "id": "cors-3", "topicId": "cors", "tags": ["cors", "autz"], "difficulty": "medium",
+      "question": "¿Qué diferencia hay entre un error de CORS y un problema de autorización?",
+      "answer": "**CORS** = bloqueo del navegador por política same-origin. No tiene que ver con identidad ni permisos del usuario; tiene que ver con qué **origen** del front intenta acceder. Lo gestiona el browser comparando headers.\n\n**Autorización** = el servidor sabe quién eres pero **no te deja** hacer la acción (401 si no estás autenticado, 403 si lo estás pero sin permiso). Es decisión del backend, no del browser. La petición se procesa, sólo que devuelve error explícito."
+    },
+    {
+      "id": "cors-4", "topicId": "cors", "tags": ["status", "autz"], "difficulty": "easy",
+      "question": "¿Qué diferencia hay entre un 401 y un 403?",
+      "answer": "- **401 Unauthorized**: el cliente **no se ha autenticado** correctamente (no manda token, token caducado, firma inválida). El servidor no sabe quién es. Suele incluir header `WWW-Authenticate`.\n- **403 Forbidden**: el cliente **está autenticado** pero **no tiene permiso** para esta acción/recurso. El servidor sabe quién es, pero le dice que no.\n\nRegla rápida: 401 = identifícate; 403 = identificado pero te falta autorización."
+    },
+    {
+      "id": "cors-5", "topicId": "cors", "tags": ["status"], "difficulty": "easy",
+      "question": "¿Cuándo devuelve una API un 404? ¿Y un 500? ¿Un 500 es culpa del cliente o del servidor?",
+      "answer": "- **404 Not Found**: el recurso pedido no existe (ruta no mapeada o id inexistente).\n- **500 Internal Server Error**: error genérico **del servidor**. Algo se rompió en el backend (excepción no controlada, fallo de dependencia, NPE...). **Culpa del servidor**, no del cliente. La familia 5xx siempre es del servidor; la 4xx es del cliente."
+    },
+    {
+      "id": "async-1", "topicId": "async", "tags": ["async"], "difficulty": "medium",
+      "question": "Tienes un endpoint síncrono que tarda 10s pero el usuario sólo necesita saber que se va a hacer. ¿Cómo lo conviertes en asíncrono?",
+      "answer": "Patrones:\n1. **Encolar el trabajo** (Kafka, SQS, Rabbit) y devolver **`202 Accepted`** con un id o `Location` para consultar estado. Un consumer lo procesa aparte.\n2. **`@Async` + `CompletableFuture`** en Spring para disparar la tarea en un pool de threads (sólo si la tarea puede quedarse en la misma app; si el pod muere, se pierde).\n3. **Event-driven** completo: el endpoint publica un evento de dominio y otros servicios reaccionan.\n4. **Polling/SSE/WebSocket** para que el cliente reciba el resultado luego.\n\nPara producción seria, opción 1 (cola/broker) es la más fiable: persistencia, reintentos, escalado horizontal."
+    },
+    {
+      "id": "async-2", "topicId": "async", "tags": ["async", "ejecutor"], "difficulty": "medium",
+      "question": "Si no quieres ejecutarlo después mediante un scheduler sino ahora, ¿qué usarías?",
+      "answer": "Opciones \"ahora pero asíncrono\":\n- **`@Async`** en Spring (con `@EnableAsync` y un `Executor` configurado).\n- **`CompletableFuture.supplyAsync(...)`** con un `ExecutorService` propio.\n- En Java 21, **virtual threads** (`Executors.newVirtualThreadPerTaskExecutor()`) si son tareas con I/O.\n- **Project Reactor** si trabajas reactivo (`Mono.fromCallable(...).subscribeOn(Schedulers.boundedElastic())`).\n- **Encolar un mensaje** y un consumer lo procesa inmediatamente (cola interna en memoria o broker)."
+    },
+    {
+      "id": "async-3", "topicId": "async", "tags": ["reactivo"], "difficulty": "hard",
+      "question": "¿Qué diferencia hay entre que algo sea asíncrono y que algo sea reactivo?",
+      "answer": "**Asíncrono**: el caller no se bloquea esperando la respuesta. Puede implementarse con threads, callbacks, futures, etc. No implica ningún modelo concreto.\n\n**Reactivo**: paradigma basado en **streams de datos** y **propagación de cambios**, con **push** desde la fuente, **backpressure** (el consumidor controla el ritmo) y **non-blocking I/O**. En Java: Project Reactor (`Mono`/`Flux`), RxJava. Funciona con event loop y pocos threads, escala muy bien para I/O intensivo.\n\nTodo lo reactivo es asíncrono, pero **no todo lo asíncrono es reactivo**: `CompletableFuture` es async pero no reactivo (sin backpressure, modelo pull/futures)."
+    },
+    {
+      "id": "async-4", "topicId": "async", "tags": ["concurrencia"], "difficulty": "medium",
+      "question": "¿Qué significa que algo sea thread safe?",
+      "answer": "**Thread-safe** = puede ser invocado por **múltiples hilos a la vez** sin producir condiciones de carrera, corrupción de estado ni resultados incorrectos. Vías habituales:\n1. **Inmutabilidad** (la mejor): si el objeto no muta, no hay problema (`String`, `Integer`, records).\n2. **Sincronización**: `synchronized`, `ReentrantLock`, `ReadWriteLock`.\n3. **Estructuras concurrentes**: `ConcurrentHashMap`, `CopyOnWriteArrayList`.\n4. **Atomic**: `AtomicInteger`, `AtomicReference` (operaciones CAS).\n5. **Confinamiento**: cada hilo tiene su copia (`ThreadLocal`, stack).\n6. **Patrones**: actors, mensajes inmutables.\n\nEjemplos no thread-safe: `HashMap`, `ArrayList`, `SimpleDateFormat`."
+    },
+    {
+      "id": "msg-1", "topicId": "msg", "tags": ["brokers"], "difficulty": "easy",
+      "question": "¿Qué experiencia tienes con colas o brokers como SQS, Kafka o RabbitMQ?",
+      "answer": "Respuesta personal — prepara una real. Estructura sugerida: nombra el broker(s), el caso de uso (event-driven entre micros, integración con otro sistema, procesamiento batch), patrones que has aplicado (idempotencia, retries con DLQ, ordering por key, particionado), y problemas que has resuelto (duplicados, rebalanceo, consumer lag, ordering)."
+    },
+    {
+      "id": "msg-2", "topicId": "msg", "tags": ["fundamentos"], "difficulty": "easy",
+      "question": "¿Qué diferencia hay entre una cola y un topic?",
+      "answer": "- **Cola (queue)**: modelo **point-to-point**. Un mensaje se entrega a **un único consumidor** (load balancing entre consumidores). Ejemplo: SQS, RabbitMQ (queues).\n- **Topic**: modelo **publish/subscribe**. Un mensaje llega a **todos los suscriptores** (broadcast). Ejemplo: SNS, RabbitMQ exchanges, Kafka topics (con consumer groups, broadcasting entre grupos y load balancing dentro de cada grupo)."
+    },
+    {
+      "id": "msg-3", "topicId": "msg", "tags": ["consumers"], "difficulty": "medium",
+      "question": "Si tengo una cola y levanto 10 instancias de mi aplicación, ¿cuántos leen un mensaje específico?",
+      "answer": "**Uno solo**. En una cola point-to-point, el broker entrega cada mensaje a **una única instancia**; las otras 9 no lo ven. Esto es justo lo que da escalabilidad horizontal: más consumers = más throughput (siempre que haya mensajes suficientes). Sólo si una instancia falla, el mensaje vuelve a la cola (visibility timeout en SQS, ack en Rabbit) y otra lo coge."
+    },
+    {
+      "id": "msg-4", "topicId": "msg", "tags": ["consumers", "kafka"], "difficulty": "medium",
+      "question": "Si me conecto a un topic, ¿cuántos consumidores leen el mensaje?",
+      "answer": "Depende del modelo:\n- **Pub/Sub puro** (SNS, Rabbit fanout): **todos los suscriptores** reciben el mensaje.\n- **Kafka**: cada **consumer group** recibe el mensaje. Dentro de un mismo grupo, sólo **una instancia** lo procesa (load balance entre partitions). Si tienes 3 grupos consumiendo el mismo topic, 3 instancias (una por grupo) leen ese mensaje.\n\nLa unidad de paralelismo en Kafka son las **particiones**: con N particiones, máximo N consumers activos por grupo procesando en paralelo."
+    },
+    {
+      "id": "db-1", "topicId": "db", "tags": ["experiencia"], "difficulty": "easy",
+      "question": "¿Con qué gestores de bases de datos has trabajado?",
+      "answer": "Respuesta personal. Estructura: relacionales (PostgreSQL, MySQL, Oracle, SQL Server, H2 para tests), NoSQL documentales (MongoDB), key-value (Redis), columnares (Cassandra, DynamoDB), búsqueda (Elasticsearch, OpenSearch). Si tu fuerte es Mongo, dilo claro y comenta lo que sí has tocado en relacional aunque sea menos."
+    },
+    {
+      "id": "db-2", "topicId": "db", "tags": ["modelado"], "difficulty": "easy",
+      "question": "Si tienes que modelar en BD una relación N a M (empleado-empresa), ¿cómo lo haces? ¿Cuántas tablas?",
+      "answer": "**Tres tablas**: las dos entidades + una **tabla de unión** (junction/intermediate table) con dos FKs.\n\n```sql\nempleados(id PK, nombre, ...)\nempresas(id PK, nombre, ...)\nempleados_empresas(empleado_id FK, empresa_id FK, fecha_alta, rol, ...)\n  PRIMARY KEY (empleado_id, empresa_id)\n```\n\nLa **clave primaria compuesta** evita duplicados. Si la relación tiene atributos propios (fecha, rol, etc.), van en la tabla intermedia. En JPA se modela con `@ManyToMany` (sin atributos extra) o con una entidad propia + dos `@ManyToOne` (cuando hay atributos)."
+    },
+    {
+      "id": "db-3", "topicId": "db", "tags": ["normalización"], "difficulty": "medium",
+      "question": "¿Qué es la tercera forma normal?",
+      "answer": "**3FN**: la tabla está en 2FN y **no hay dependencias transitivas** entre atributos no clave. Es decir, todo atributo no clave depende **directamente** de la clave primaria, no de otro atributo no clave.\n\nEjemplo de violación: tabla `empleado(id, nombre, departamento_id, departamento_nombre)`. `departamento_nombre` depende de `departamento_id`, no del `id` del empleado. Solución: sacar departamento a su propia tabla. Recordatorio: 1FN = valores atómicos; 2FN = 1FN + no dependencias parciales de claves compuestas; 3FN = 2FN + no transitivas."
+    },
+    {
+      "id": "db-4", "topicId": "db", "tags": ["indices"], "difficulty": "medium",
+      "question": "¿Puedo tener un índice por dos columnas a la vez?",
+      "answer": "Sí, se llaman **índices compuestos (multicolumn)**: `CREATE INDEX idx ON tabla(col1, col2)`. El motor los recorre como una estructura ordenada por `(col1, col2)`, por lo que el **orden de las columnas importa**: el índice se usa eficientemente para filtros por `col1` o `col1 + col2`, pero **no** por sólo `col2` (regla del **prefijo más a la izquierda**). Útil cuando casi todas tus queries filtran por las dos juntas o por la primera sola."
+    },
+    {
+      "id": "db-5", "topicId": "db", "tags": ["sql", "having"], "difficulty": "hard",
+      "question": "¿Cuándo puedo tener un HAVING sin un GROUP BY en una query?",
+      "answer": "Cuando hay **función de agregado** sobre todo el conjunto (sin agrupar). El motor lo trata como **un único grupo implícito**:\n\n```sql\nSELECT COUNT(*) FROM ventas HAVING COUNT(*) > 100;\nSELECT AVG(salario) FROM empleados HAVING AVG(salario) > 50000;\n```\n\nDevuelve 0 o 1 fila según se cumpla la condición. Es válido en SQL estándar pero raro en práctica; lo más habitual es usar una subquery o un WHERE."
+    },
+    {
+      "id": "sql-1", "topicId": "sql", "tags": ["joins"], "difficulty": "medium",
+      "question": "Tabla A (5 registros) LEFT JOIN tabla B (10 registros). ¿Cuántos registros devuelve? ¿Y al revés?",
+      "answer": "**LEFT JOIN A B**: devuelve **al menos 5** filas (una por cada fila de A; si una fila de A tiene varios matches en B, devuelve más; si no tiene match, devuelve una con NULLs en B). El número exacto depende de las cardinalidades.\n\n**LEFT JOIN B A** (al revés): devuelve **al menos 10** (una por cada fila de B). El \"al menos\" igual que antes; el LEFT garantiza todas las filas de la tabla de la izquierda.\n\nLa respuesta de \"truco\" que esperan: **5** y **10** asumiendo cardinalidad 1:1, pero el correcto es \"al menos N, dependiendo de los matches\"."
+    },
+    {
+      "id": "sql-2", "topicId": "sql", "tags": ["joins"], "difficulty": "easy",
+      "question": "¿Cuántos registros devuelve un INNER JOIN entre dos tablas si solo hay 3 coincidencias? ¿Qué hace un INNER JOIN?",
+      "answer": "**3 filas** (asumiendo 1:1 en los matches; si un id de A coincide con 2 de B serían más).\n\nUn **INNER JOIN** devuelve **sólo las filas con coincidencia** en ambas tablas según la condición `ON`. Sin matches → fila excluida. Es la intersección. A diferencia del LEFT/RIGHT, no añade NULLs por filas no coincidentes."
+    },
+    {
+      "id": "sql-3", "topicId": "sql", "tags": ["ordenacion"], "difficulty": "medium",
+      "question": "Si haces ORDER BY 1, ¿por qué columna estás ordenando? ¿De qué tabla?",
+      "answer": "**Por la primera columna del SELECT** (es posicional, 1-indexed). Si la query es `SELECT nombre, edad FROM empleados ORDER BY 1`, ordena por `nombre`.\n\nNo es \"de una tabla\" — es de la **proyección del SELECT**, sea de la tabla que sea o incluso una expresión (`SELECT nombre || apellido AS full, ... ORDER BY 1` ordena por `full`).\n\nEn la práctica se desaconseja porque es frágil: si cambias el SELECT, el orden cambia. Mejor `ORDER BY nombre`."
+    },
+    {
+      "id": "perf-1", "topicId": "perf", "tags": ["preparedstatement"], "difficulty": "medium",
+      "question": "¿Qué ventajas tiene usar un PreparedStatement? ¿Por qué se usaba?",
+      "answer": "1. **Seguridad: previene SQL injection**. Los parámetros se envían separados del SQL y no se interpretan como código.\n2. **Performance / plan cache**: el motor **parsea, planifica y optimiza una sola vez** la query parametrizada; ejecuciones posteriores reutilizan el plan. Útil cuando ejecutas la misma query muchas veces con valores distintos.\n3. **Tipado**: pasas parámetros con tipos Java (`setString`, `setInt`, `setTimestamp`), evitando errores de formato y problemas de quoting.\n4. **Legibilidad**: separa la lógica SQL de los valores.\n\nFrente al `Statement` plano que concatena strings (vulnerable y sin reuso de plan)."
+    },
+    {
+      "id": "perf-2", "topicId": "perf", "tags": ["planes"], "difficulty": "medium",
+      "question": "¿Has sacado alguna vez un plan de ejecución? ¿Qué es?",
+      "answer": "Respuesta personal — di sí si lo has tocado.\n\nEl **plan de ejecución** es la **estrategia que el optimizador del motor decide** para resolver una query: qué tablas lee, en qué orden, qué índices usa, qué algoritmo de join (nested loop, hash join, merge join), qué operaciones (seq scan, index scan, sort, hash, filter). Se obtiene con **`EXPLAIN`** (`EXPLAIN ANALYZE` en Postgres ejecuta y muestra costes reales; en Oracle `EXPLAIN PLAN`/`DBMS_XPLAN`; en MySQL `EXPLAIN`/`EXPLAIN ANALYZE`).\n\nEs un **árbol de operaciones** que se lee de adentro hacia afuera (las hojas son los accesos a tabla, la raíz es el resultado final)."
+    },
+    {
+      "id": "perf-3", "topicId": "perf", "tags": ["planes", "tuning"], "difficulty": "medium",
+      "question": "¿Cuándo sacas un plan de ejecución? ¿Qué buscas en el árbol?",
+      "answer": "**Cuándo**: cuando una query es lenta, escala mal con el tamaño, sospechas que no usa un índice, o estás validando que un cambio (índice nuevo, refactor) ha tenido efecto.\n\n**Qué buscas**:\n- **Full table scans (seq scan)** inesperados sobre tablas grandes → falta de índice o el optimizador decidió que no compensa.\n- **Índices que esperabas usar pero no se usan** (estadísticas obsoletas, función sobre la columna, cast implícito).\n- **Joins ineficientes** (nested loop con muchas filas en el lado externo).\n- **Sorts y hash** caros en memoria/disco.\n- **Estimaciones vs reales muy distintas** (con `EXPLAIN ANALYZE`): suele indicar estadísticas obsoletas (`ANALYZE`).\n- El **coste** de cada nodo y el coste acumulado."
+    },
+    {
+      "id": "perf-4", "topicId": "perf", "tags": ["planes", "coste"], "difficulty": "medium",
+      "question": "¿Qué representa el coste en un plan de ejecución? ¿Cómo afecta un índice al coste?",
+      "answer": "El **coste** es una **estimación abstracta** que el optimizador asigna a cada operación, compuesta por I/O (lectura de páginas) y CPU. No es ms reales; sirve para **comparar planes alternativos** y elegir el más barato. En Postgres tiene formato `(startup_cost..total_cost rows=... width=...)`.\n\n**Un índice** baja el coste de acceso porque permite ir directo a las filas relevantes (`index scan`, `index only scan`) en vez de leer toda la tabla (`seq scan`). El motor decide usarlo si la **selectividad** es buena (recupera pocas filas relativas al total). Si vas a leer el 80% de la tabla, un seq scan suele ser más barato que el random I/O del índice."
+    },
+    {
+      "id": "java-7", "topicId": "java", "tags": ["optional"], "difficulty": "easy",
+      "question": "¿Para qué sirve Optional y cómo se usa bien?",
+      "answer": "**`Optional<T>`** es un contenedor que puede tener un valor o estar vacío; comunica explícitamente que un resultado **puede no existir** y evita NPEs. Bien usado:\n```java\nreturn repo.findById(id)\n    .map(User::getEmail)\n    .orElseThrow(() -> new NotFoundException(id));\n```\n**Antipatrones**: `optional.get()` sin comprobar (= NPE disfrazado), usarlo como campo de entidad o parámetro de método, o `Optional<List>` (devuelve lista vacía mejor). Su sitio natural es el **tipo de retorno** de métodos que pueden no encontrar nada."
+    },
+    {
+      "id": "java-8", "topicId": "java", "tags": ["inmutabilidad", "records"], "difficulty": "medium",
+      "question": "¿Qué es un record y por qué ayuda con la inmutabilidad y el thread safety?",
+      "answer": "Un **`record`** (Java 16+) es una clase **inmutable** y transparente: declaras los componentes y el compilador genera constructor canónico, getters, `equals`, `hashCode` y `toString`. Sus campos son `final`.\n\nAl ser inmutable es **thread-safe por construcción**: ningún hilo puede mutar su estado, así que no hay condiciones de carrera. Ideal para DTOs, value objects de DDD, eventos y mensajes entre hilos. Si necesitas un \"cambio\", creas una copia nueva (`with`-style)."
+    },
+    {
+      "id": "spring-6", "topicId": "spring", "tags": ["transacciones"], "difficulty": "medium",
+      "question": "¿Qué hace @Transactional y qué controlan propagation e isolation?",
+      "answer": "**`@Transactional`** envuelve el método en una transacción (commit al salir bien, **rollback** ante `RuntimeException`/`Error` por defecto; las checked no hacen rollback salvo `rollbackFor`).\n\n- **`propagation`**: cómo se comporta respecto a una transacción existente. `REQUIRED` (por defecto, se une o crea), `REQUIRES_NEW` (suspende la actual y abre otra), `NESTED`, `SUPPORTS`, `MANDATORY`.\n- **`isolation`**: nivel de aislamiento de la BD (`READ_COMMITTED`, `REPEATABLE_READ`, `SERIALIZABLE`).\n\n**Ojo Spring**: funciona por proxy AOP, así que una llamada **interna** (`this.metodo()`) no aplica la transacción; debe entrar desde fuera del bean."
+    },
+    {
+      "id": "rest-8", "topicId": "rest", "tags": ["verbos", "idempotencia"], "difficulty": "medium",
+      "question": "¿Qué verbos HTTP son idempotentes y seguros? ¿Por qué importa?",
+      "answer": "- **Seguros** (no mutan estado): `GET`, `HEAD`, `OPTIONS`.\n- **Idempotentes** (N llamadas = mismo efecto que 1): `GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`.\n- **No idempotentes**: `POST` (crea un recurso nuevo cada vez), `PATCH` (depende de la operación).\n\nImporta para **reintentos**: un cliente/proxy puede reintentar con seguridad un `PUT` o `DELETE` tras un timeout, pero reintentar un `POST` puede crear duplicados → de ahí patrones como **idempotency-key** en pagos."
+    },
+    {
+      "id": "sec-4", "topicId": "sec", "tags": ["jwt", "refresh"], "difficulty": "medium",
+      "question": "¿Qué diferencia hay entre access token y refresh token? ¿Por qué dos?",
+      "answer": "- **Access token** (JWT): vida **corta** (minutos), se envía en cada petición. Si lo roban, la ventana de daño es pequeña.\n- **Refresh token**: vida **larga**, se guarda de forma más segura (cookie httpOnly) y **sólo** se usa contra el endpoint de auth para obtener un nuevo access token.\n\nEl patrón evita el dilema \"token largo = inseguro / token corto = relogin constante\". Además el refresh permite **revocación** (lista en servidor), algo que un JWT stateless por sí solo no da: un access token firmado es válido hasta que expira, no se puede \"apagar\" sin una blacklist."
+    },
+    {
+      "id": "async-5", "topicId": "async", "tags": ["completablefuture"], "difficulty": "medium",
+      "question": "¿Cómo combinas varias tareas asíncronas con CompletableFuture?",
+      "answer": "- **Encadenar**: `thenApply` (transforma el resultado, función síncrona), `thenCompose` (encadena otro `CompletableFuture` — el `flatMap` de los futures), `thenAccept` (consume sin devolver).\n- **Combinar dos**: `thenCombine(otro, (a,b) -> ...)`.\n- **Esperar varias**: `CompletableFuture.allOf(f1, f2, f3).join()` (todas) o `anyOf` (la primera).\n- **Errores**: `exceptionally(ex -> fallback)` o `handle((res, ex) -> ...)`.\n\nClave: `thenApply` para resultado ya disponible, `thenCompose` cuando el siguiente paso es **otra llamada asíncrona** (evita `CompletableFuture<CompletableFuture<T>>`)."
+    },
+    {
+      "id": "async-6", "topicId": "async", "tags": ["virtual-threads", "reactivo"], "difficulty": "hard",
+      "question": "Java 21 trae virtual threads. ¿Hacen innecesario el modelo reactivo?",
+      "answer": "**No del todo, pero cambian la ecuación.** Los **virtual threads** (Project Loom) permiten escribir código **bloqueante y secuencial** (fácil de leer y depurar) que escala a millones de hilos: el runtime los desmonta del platform thread cuando hacen I/O. Resuelven el \"thread-per-request no escala\" sin reactividad.\n\nEl modelo **reactivo** sigue aportando lo que Loom no da: **backpressure** (control de ritmo del productor), composición de **streams** de eventos y operadores (`Flux`, `map/filter/buffer`). \n\nRegla práctica: si tu problema es \"muchas peticiones con I/O\" → virtual threads, más simple. Si es \"streams de datos con control de flujo y composición\" → reactivo."
+    },
+    {
+      "id": "async-7", "topicId": "async", "tags": ["reactivo"], "difficulty": "hard",
+      "question": "¿Por qué nunca debes hacer una llamada bloqueante dentro de un flujo reactivo?",
+      "answer": "Porque WebFlux/Reactor corre sobre **pocos threads de un event loop** (los `EventLoop` de Netty). Si bloqueas uno (un `jdbc` síncrono, `Thread.sleep`, `future.get()`, `.block()`), **paralizas todas** las peticiones que ese thread estaba multiplexando → throughput se desploma.\n\nSoluciones: usar drivers **no bloqueantes** (R2DBC en vez de JDBC, `WebClient` en vez de `RestTemplate`); o si **tienes** que bloquear, aislarlo en un scheduler dedicado: `Mono.fromCallable(...).subscribeOn(Schedulers.boundedElastic())`. Herramientas como **BlockHound** detectan bloqueos accidentales en tests."
+    },
+    {
+      "id": "msg-5", "topicId": "msg", "tags": ["idempotencia", "entrega"], "difficulty": "medium",
+      "question": "¿Qué garantías de entrega hay (at-least-once, etc.) y por qué necesitas idempotencia?",
+      "answer": "Garantías de entrega:\n- **At-most-once**: como mucho una vez, puede perderse (sin reintentos).\n- **At-least-once**: nunca se pierde, pero **puede duplicarse** (el caso habitual: el consumer procesa y muere antes de hacer ack → se reentrega). \n- **Exactly-once**: ideal y caro; Kafka lo logra dentro de su ecosistema (transacciones + idempotent producer), pero entre sistemas externos es muy difícil.\n\nComo lo normal es **at-least-once**, el consumer debe ser **idempotente**: procesar el mismo mensaje 2 veces no debe duplicar el efecto (ej. clave de deduplicación, `UPSERT`, comprobar si ya se hizo). Los fallos van a una **DLQ** (dead-letter queue) tras N reintentos."
+    },
+    {
+      "id": "msg-6", "topicId": "msg", "tags": ["kafka", "offsets"], "difficulty": "medium",
+      "question": "En Kafka, ¿qué es el offset, el commit y el consumer lag?",
+      "answer": "- **Offset**: posición secuencial de un mensaje **dentro de una partición**. Cada consumer group recuerda hasta dónde ha leído.\n- **Commit del offset**: el consumer confirma \"ya procesé hasta aquí\". Si commiteas **antes** de procesar y mueres → pierdes mensajes (at-most-once); si commiteas **después** → posible reproceso (at-least-once).\n- **Consumer lag**: diferencia entre el último offset producido y el último commiteado por el grupo. Lag creciente = el consumer **no da abasto** → escalar consumers (hasta = nº de particiones) u optimizar el procesado.\n\nEl **rebalanceo** ocurre cuando entran/salen consumers del grupo: Kafka reparte las particiones de nuevo (con pausa breve)."
+    },
+    {
+      "id": "arch-6", "topicId": "arch", "tags": ["ddd", "tactico"], "difficulty": "medium",
+      "question": "¿Qué diferencia hay entre entidad, value object y aggregate root?",
+      "answer": "- **Entidad**: tiene **identidad** propia que persiste en el tiempo (un `Pedido` con su id); dos entidades con mismos datos pero distinto id son distintas.\n- **Value object**: se define por sus **atributos**, no por identidad; es **inmutable** y reemplazable (`Dinero`, `Direccion`, `RangoFechas`). Dos value objects con los mismos valores son iguales.\n- **Aggregate root**: la entidad **raíz** que da acceso a un grupo de objetos tratados como una unidad de consistencia. Las reglas: se referencia **por id** desde fuera, la raíz **garantiza las invariantes** del agregado, y una transacción modifica **un solo agregado**."
+    },
+    {
+      "id": "arch-7", "topicId": "arch", "tags": ["hexagonal", "puertos"], "difficulty": "medium",
+      "question": "En hexagonal, ¿qué son puertos y adaptadores, y la diferencia driving vs driven?",
+      "answer": "- **Puerto**: una **interfaz** definida por el dominio/aplicación. **Adaptador**: la implementación concreta que la conecta con tecnología.\n- **Driving / de entrada (primary)**: lo que **invoca** a la aplicación. Puerto = caso de uso (interfaz `CrearPedidoUseCase`); adaptador = REST controller, listener de Kafka, CLI.\n- **Driven / de salida (secondary)**: lo que la aplicación **necesita**. Puerto = interfaz que el dominio declara (`PedidoRepository`, `NotificadorPort`); adaptador = implementación JPA, cliente HTTP, productor Kafka.\n\nLa regla de oro: **las dependencias apuntan hacia el dominio**. El dominio define los puertos de salida y la infraestructura los implementa (inversión de dependencias)."
+    },
+    {
+      "id": "arch-8", "topicId": "arch", "tags": ["cqrs"], "difficulty": "hard",
+      "question": "¿Qué es CQRS y cuándo lo aplicarías?",
+      "answer": "**CQRS** (Command Query Responsibility Segregation) separa el modelo de **escritura** (commands, que mutan estado y validan invariantes) del de **lectura** (queries, optimizado para consultar). Pueden ser dos modelos, dos clases, o incluso **dos almacenes** distintos sincronizados por eventos.\n\n**Cuándo sí**: lecturas y escrituras con cargas muy asimétricas; consultas complejas/agregadas que no encajan con el modelo de dominio (ahí entra el **read model** / proyección); event sourcing.\n\n**Cuándo no**: un CRUD sencillo — CQRS añade complejidad (eventual consistency entre ambos lados). Es la respuesta natural a \"proyección de datos de dos bounded contexts\": un read model dedicado."
+    },
+    {
+      "id": "arch-9", "topicId": "arch", "tags": ["saga", "transacciones"], "difficulty": "hard",
+      "question": "¿Cómo mantienes consistencia en una transacción que cruza varios microservicios?",
+      "answer": "No puedes usar una transacción ACID distribuida (2PC escala mal y acopla). Se usa el patrón **Saga**: una secuencia de transacciones **locales**, cada una en su servicio, con **acciones compensatorias** si un paso falla (deshacer lo anterior).\n\nDos estilos:\n- **Coreografía**: cada servicio reacciona a eventos y emite el suyo. Desacoplado pero el flujo queda \"repartido\" y difícil de seguir.\n- **Orquestación**: un orquestador central dirige los pasos y las compensaciones. Más visible y fácil de cambiar, pero un punto central.\n\nEs **eventual consistency**: durante la saga el sistema está temporalmente inconsistente. Requiere idempotencia y manejo de fallos."
+    },
+    {
+      "id": "arch-10", "topicId": "arch", "tags": ["ddd", "acl"], "difficulty": "medium",
+      "question": "¿Qué es una Anti-Corruption Layer (ACL)?",
+      "answer": "Una **Anti-Corruption Layer** es una capa de traducción que protege tu modelo de dominio del modelo de **otro** bounded context o sistema externo (legacy, API de terceros). En vez de dejar que sus conceptos y nombres \"contaminen\" tu dominio, la ACL **traduce** entre ambos lenguajes ubicuos (DTOs externos ↔ tus objetos de dominio).\n\nSe materializa como adaptadores + mappers en la capa de infraestructura. Beneficio: si el sistema externo cambia o tiene un modelo feo, el impacto queda **aislado** en la ACL y tu dominio permanece limpio y estable."
+    },
+    {
+      "id": "db-6", "topicId": "db", "tags": ["normalización"], "difficulty": "medium",
+      "question": "¿Qué son la 1FN y la 2FN (antes de llegar a la 3FN)?",
+      "answer": "- **1FN (Primera forma normal)**: valores **atómicos** (no listas ni campos multivaluados en una celda) y cada fila única. Nada de `telefonos = '600..., 601...'` en una columna.\n- **2FN**: está en 1FN y **no hay dependencias parciales** de una clave **compuesta**. Es decir, ningún atributo no clave depende sólo de **parte** de la clave primaria. (Si la PK es `(pedido_id, producto_id)`, el `nombre_producto` depende sólo de `producto_id` → viola 2FN, sácalo a otra tabla).\n- **3FN**: en 2FN + sin **dependencias transitivas** (un atributo no clave que depende de otro no clave).\n\nResumen mnemotécnico: 1FN atómico · 2FN toda la clave · 3FN nada más que la clave."
+    },
+    {
+      "id": "db-7", "topicId": "db", "tags": ["claves", "integridad"], "difficulty": "easy",
+      "question": "¿Qué diferencia hay entre clave primaria y clave foránea? ¿Qué es la integridad referencial?",
+      "answer": "- **Clave primaria (PK)**: identifica **unívocamente** cada fila de una tabla. Única, no nula, idealmente estable (a menudo un id surrogate autoincremental o UUID).\n- **Clave foránea (FK)**: una columna que **referencia** la PK de otra (o la misma) tabla, creando la relación.\n\nLa **integridad referencial** es la garantía de que toda FK apunta a una fila que **existe**: no puedes insertar un pedido con `cliente_id` inexistente, ni borrar un cliente que tiene pedidos (salvo políticas `ON DELETE CASCADE` / `SET NULL` / `RESTRICT`). La hace cumplir la BD con la constraint `FOREIGN KEY`."
+    },
+    {
+      "id": "db-8", "topicId": "db", "tags": ["acid", "transacciones"], "difficulty": "medium",
+      "question": "¿Qué significan las propiedades ACID de una transacción?",
+      "answer": "- **A — Atomicidad**: todo o nada; si un paso falla, se revierte la transacción entera (rollback).\n- **C — Consistencia**: la transacción lleva la BD de un estado válido a otro válido (respeta constraints, FKs, triggers).\n- **I — Aislamiento**: las transacciones concurrentes no se pisan; el resultado es como si se ejecutaran en algún orden serie (modulado por el nivel de aislamiento).\n- **D — Durabilidad**: una vez commiteada, persiste aunque se caiga el sistema (WAL/redo log).\n\nLas BD relacionales las garantizan; muchas NoSQL relajan C/I a favor de disponibilidad y escala (teorema CAP, BASE)."
+    },
+    {
+      "id": "db-9", "topicId": "db", "tags": ["aislamiento", "concurrencia"], "difficulty": "hard",
+      "question": "¿Qué niveles de aislamiento existen y qué anomalías evita cada uno?",
+      "answer": "De menos a más estricto, y las anomalías que van eliminando:\n- **READ UNCOMMITTED**: permite **dirty reads** (lees cambios no commiteados de otra tx).\n- **READ COMMITTED** (default en Postgres/Oracle): no dirty reads, pero sí **non-repeatable reads** (relees una fila y cambió).\n- **REPEATABLE READ** (default en MySQL InnoDB): la misma fila no cambia al releer, pero pueden aparecer **phantom reads** (nuevas filas que cumplen tu `WHERE`).\n- **SERIALIZABLE**: como si las transacciones fueran en serie; sin anomalías, pero más bloqueos/abortos.\n\nMás aislamiento = más correcto pero menos concurrencia. Eliges según cuánto te duele cada anomalía."
+    },
+    {
+      "id": "db-10", "topicId": "db", "tags": ["indices"], "difficulty": "medium",
+      "question": "¿Qué diferencia hay entre un índice clustered y uno non-clustered?",
+      "answer": "- **Clustered**: define el **orden físico** de las filas en disco; por eso **sólo puede haber uno** por tabla. La PK suele serlo (en MySQL InnoDB siempre; en SQL Server por defecto). Buscar por él es muy rápido y los rangos son secuenciales.\n- **Non-clustered (secundario)**: una estructura **aparte** que ordena las claves del índice y apunta a la fila (por su posición o por la clave clustered). Puedes tener **varios**.\n\nMatiz Postgres: no tiene clustered índices como tal (las filas viven en un *heap*); el comando `CLUSTER` reordena una vez, pero no se mantiene. Todos sus índices son, en la práctica, secundarios."
+    },
+    {
+      "id": "sql-4", "topicId": "sql", "tags": ["joins"], "difficulty": "medium",
+      "question": "¿Qué tipos de JOIN existen y en qué se diferencian?",
+      "answer": "- **INNER JOIN**: sólo filas con coincidencia en **ambas** tablas (intersección).\n- **LEFT (OUTER) JOIN**: todas las de la **izquierda** + las coincidentes de la derecha (NULLs donde no hay match).\n- **RIGHT (OUTER) JOIN**: simétrico, todas las de la derecha.\n- **FULL (OUTER) JOIN**: todas las de ambas; NULLs donde falte el lado contrario.\n- **CROSS JOIN**: **producto cartesiano**, cada fila de A con cada fila de B (A×B), sin condición.\n- **SELF JOIN**: una tabla unida consigo misma (ej. empleado → su jefe, ambos en `empleados`).\n\nLos OUTER se usan para \"tráeme todo X aunque no tenga Y\"; el INNER para \"sólo lo que casa\"."
+    },
+    {
+      "id": "sql-5", "topicId": "sql", "tags": ["group-by", "having"], "difficulty": "medium",
+      "question": "¿Qué diferencia hay entre WHERE y HAVING? ¿Cómo encaja GROUP BY?",
+      "answer": "- **`WHERE`** filtra **filas individuales** *antes* de agrupar. No puede usar funciones de agregado.\n- **`GROUP BY`** agrupa las filas restantes por una o más columnas; los agregados (`COUNT`, `SUM`, `AVG`) se calculan **por grupo**.\n- **`HAVING`** filtra **grupos** *después* de agregar; ahí sí usas agregados.\n\nEjemplo: `SELECT depto, COUNT(*) FROM emp WHERE activo = true GROUP BY depto HAVING COUNT(*) > 5`. Primero descarta inactivos (WHERE), agrupa por depto, y se queda con los deptos de más de 5 (HAVING). Filtrar en WHERE cuando puedas es más eficiente (reduce filas antes de agrupar)."
+    },
+    {
+      "id": "sql-6", "topicId": "sql", "tags": ["orden-logico"], "difficulty": "hard",
+      "question": "¿En qué orden lógico ejecuta el motor las cláusulas de un SELECT?",
+      "answer": "El orden **lógico** (distinto del que escribes) es:\n1. **FROM** / **JOIN** — forma el conjunto de filas combinadas.\n2. **WHERE** — filtra filas.\n3. **GROUP BY** — agrupa.\n4. **HAVING** — filtra grupos.\n5. **SELECT** — calcula columnas/expresiones y alias.\n6. **DISTINCT**.\n7. **ORDER BY** — ordena.\n8. **LIMIT / OFFSET** — recorta.\n\nEsto explica cosas que sorprenden: no puedes usar un **alias del SELECT en el WHERE** (el SELECT aún no se evaluó), pero **sí en el ORDER BY** (ya se evaluó). Y por qué `ORDER BY 1` o un alias funcionan al final."
+    },
+    {
+      "id": "sql-7", "topicId": "sql", "tags": ["null", "agregados"], "difficulty": "medium",
+      "question": "¿Cómo se comporta NULL en comparaciones y agregados? ¿COUNT(*) vs COUNT(col)?",
+      "answer": "**NULL no es un valor, es \"desconocido\"**. Por eso `NULL = NULL` da **NULL** (no `true`); para comparar usas `IS NULL` / `IS NOT NULL`. Cualquier operación con NULL suele dar NULL (`5 + NULL = NULL`). Un `WHERE col = 1` **excluye** las filas con `col` NULL.\n\nEn agregados los **NULL se ignoran**:\n- **`COUNT(*)`** cuenta **filas** (incluye las que tienen NULLs).\n- **`COUNT(col)`** cuenta filas donde `col` **no es NULL**.\n- `AVG(col)` promedia sólo los no-NULL (¡no los trata como 0!).\n\n`COALESCE(col, valor)` sustituye NULLs por un valor por defecto."
+    },
+    {
+      "id": "sql-8", "topicId": "sql", "tags": ["subqueries"], "difficulty": "hard",
+      "question": "¿Cuándo usar una subquery vs un JOIN? ¿Diferencia entre IN y EXISTS?",
+      "answer": "- **JOIN** cuando necesitas **columnas** de ambas tablas en el resultado. \n- **Subquery** cuando sólo quieres filtrar o calcular un valor derivado y no necesitas exponer la otra tabla.\n\n**`IN` vs `EXISTS`** (filtrar por existencia en otra tabla):\n- `WHERE id IN (SELECT ...)`: materializa la lista; ojo, si la subquery devuelve **NULLs** con `NOT IN` el resultado puede vaciarse inesperadamente.\n- `WHERE EXISTS (SELECT 1 FROM ... WHERE ...)`: para en cuanto encuentra una fila (correlacionada); suele ser **más eficiente** con subconjuntos grandes y es seguro frente a NULLs.\n\nEn motores modernos el optimizador a menudo los reescribe a un semi-join equivalente, pero `EXISTS`/`NOT EXISTS` es la opción robusta por defecto."
+    },
+    {
+      "id": "perf-5", "topicId": "perf", "tags": ["indices", "tipos"], "difficulty": "medium",
+      "question": "¿Qué tipos de índice hay y cuándo usar cada uno?",
+      "answer": "- **B-tree** (por defecto): ordenado; sirve para `=`, rangos (`<`, `>`, `BETWEEN`), `ORDER BY` y prefijos de `LIKE 'abc%'`. El 95% de los casos.\n- **Hash**: sólo igualdad `=`, muy rápido pero sin rangos.\n- **GIN** (Postgres): para contenedores — `jsonb`, arrays, full-text search (`@>`, `to_tsvector`).\n- **GiST / SP-GiST**: datos geométricos/geoespaciales, rangos, vecinos cercanos.\n- **BRIN**: tablas enormes ordenadas físicamente (series temporales); índice diminuto.\n- **Compuesto**: varias columnas, regla del **prefijo más a la izquierda**.\n- **Parcial**: `WHERE activo = true` — sólo indexa un subconjunto.\n- **Funcional**: `CREATE INDEX ON t (lower(email))` para indexar una expresión."
+    },
+    {
+      "id": "perf-6", "topicId": "perf", "tags": ["indices", "tradeoffs"], "difficulty": "medium",
+      "question": "¿Cuándo un índice PERJUDICA en lugar de ayudar?",
+      "answer": "Los índices no son gratis:\n- **Escrituras más lentas**: cada `INSERT`/`UPDATE`/`DELETE` debe **mantener** todos los índices afectados. Tablas con mucha escritura y muchos índices sufren.\n- **Baja selectividad**: indexar una columna con pocos valores distintos (ej. `sexo`, `activo`) apenas filtra → el optimizador hará seq scan igualmente.\n- **Tablas pequeñas**: leer toda la tabla es más barato que ir por el índice.\n- **Espacio en disco** y memoria (caché) que ocupan.\n- **Índices redundantes**: si tienes `(a, b)` no necesitas `(a)` por separado.\n\nRegla: indexa columnas de **filtro/join frecuentes y selectivas**; mide con `EXPLAIN` antes y después, no a ciegas."
+    },
+    {
+      "id": "perf-7", "topicId": "perf", "tags": ["covering-index"], "difficulty": "hard",
+      "question": "¿Qué es un covering index / index-only scan?",
+      "answer": "Un **covering index** contiene **todas las columnas** que la query necesita (las del `WHERE`, el `SELECT` y el `ORDER BY`), de modo que el motor responde **sin tocar la tabla**: lo llama **index-only scan**. Evita el paso extra de ir del índice a la fila (el *heap fetch*), que es random I/O caro.\n\nEjemplo: para `SELECT email FROM users WHERE pais = 'ES'`, un índice `(pais, email)` cubre la consulta. En Postgres se puede usar `INCLUDE` para añadir columnas que no filtran pero sí se devuelven: `CREATE INDEX ... ON users(pais) INCLUDE (email)`. (En Postgres el index-only scan también depende del *visibility map*.)"
+    },
+    {
+      "id": "perf-8", "topicId": "perf", "tags": ["n+1", "jpa"], "difficulty": "medium",
+      "question": "¿Qué es el problema N+1 de consultas y cómo se resuelve?",
+      "answer": "El **N+1** ocurre cuando cargas una lista de N entidades con **1** query y luego, al acceder a una relación **lazy** de cada una, se dispara **1 query por elemento** → 1 + N queries. Típico en JPA/Hibernate al recorrer `pedido.getLineas()` en un bucle.\n\nSe detecta viendo el log de SQL (ráfaga de selects idénticos) o con `EXPLAIN` lo notas por el volumen.\n\nSoluciones:\n- **`JOIN FETCH`** en JPQL o **`@EntityGraph`** para traer la relación de una vez.\n- **`@BatchSize`** / `hibernate.default_batch_fetch_size`: agrupa los lazy en pocas queries `IN (...)`.\n- A veces una **proyección/DTO** con un solo join es lo más limpio.\n\nCuidado: `JOIN FETCH` de varias colecciones a la vez multiplica filas (producto cartesiano)."
+    },
+    {
+      "id": "java-9", "topicId": "java", "tags": ["streams", "map"], "difficulty": "medium",
+      "question": "¿Cómo imprimirías de forma ordenada un Map usando streams en Java?",
+      "answer": "Sobre el `entrySet()`:\n```java\nmapa.entrySet().stream()\n    .sorted(Map.Entry.comparingByKey())          // o comparingByValue()\n    .forEach(e -> System.out.println(e.getKey() + \" = \" + e.getValue()));\n```\nOrden inverso: `.sorted(Map.Entry.<K,V>comparingByValue().reversed())`.\n\nSi quieres **conservar** el orden en un mapa nuevo, recoge en un `LinkedHashMap` (un `HashMap` no garantiza orden):\n```java\n.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,\n    (a, b) -> a, LinkedHashMap::new));\n```"
+    },
+    {
+      "id": "spring-7", "topicId": "spring", "tags": ["transacciones", "rollback"], "difficulty": "medium",
+      "question": "Si un método @Transactional lanza una excepción, ¿cómo garantizas el rollback?",
+      "answer": "Por defecto `@Transactional` hace **rollback ante excepciones unchecked** (`RuntimeException` y `Error`), pero **NO** ante **checked** (las que heredan de `Exception`).\n\nPara ajustarlo:\n- `@Transactional(rollbackFor = MiCheckedException.class)` → fuerza rollback también para esa checked.\n- `@Transactional(noRollbackFor = MiRuntimeException.class)` → evita el rollback para esa unchecked.\n\n**Trampa habitual**: si **capturas** la excepción dentro del método y no la relanzas, **no hay rollback** (la transacción no se entera). Y una vez marcada para rollback queda *rollback-only*: aunque la atrapes más arriba, ya no commiteará."
+    },
+    {
+      "id": "spring-8", "topicId": "spring", "tags": ["transacciones", "proxy"], "difficulty": "hard",
+      "question": "¿Cómo haces que un método que llama a dos repositorios sea completamente transaccional?",
+      "answer": "Anota con **`@Transactional` el método de servicio que engloba ambas llamadas**: las dos modificaciones quedan en la **misma** transacción → commit conjunto o rollback de ambas.\n\nDos cuidados:\n1. **No** pongas también `@Transactional` en los métodos internos pensando que ayuda. Con `REQUIRED` (default) se unirían a la existente, pero conceptualmente la transacción la define el método que orquesta; ponerla mal puede crear **dos transacciones** (p.ej. con `REQUIRES_NEW`).\n2. **Self-invocation**: `@Transactional` funciona por **proxy AOP**. Si un método del mismo bean llama a otro (`this.otro()`), el proxy no intercepta y la anotación interna **se ignora**. La transacción debe entrar **desde fuera del bean**."
+    },
+    {
+      "id": "spring-9", "topicId": "spring", "tags": ["transacciones", "programatica"], "difficulty": "hard",
+      "question": "Si necesitas transaccionalidad pero no puedes usar @Transactional (p.ej. código de una librería), ¿cómo lo haces?",
+      "answer": "La transaccionalidad no es magia de la anotación: por debajo hay un **`PlatformTransactionManager`**. Alternativas:\n- **`TransactionTemplate`**: `txTemplate.execute(status -> { ... })` — controlas commit/rollback dentro del callback (incluido `status.setRollbackOnly()`).\n- **`PlatformTransactionManager`** programático: `getTransaction(def)`, `commit()`, `rollback()` a mano.\n- **Envolver** la llamada externa en tu propio bean con `@Transactional` (un wrapper).\n- En último caso, **compensación manual**: deshacer explícitamente lo hecho si algo falla (saga local).\n\nUn **proxy/decorator** propio sobre el objeto externo es otra vía si quieres mantenerlo declarativo."
+    },
+    {
+      "id": "spring-10", "topicId": "spring", "tags": ["aop", "aspectos"], "difficulty": "medium",
+      "question": "¿Para qué se usan los aspectos (AOP) en Spring?",
+      "answer": "**AOP** (Aspect-Oriented Programming) separa las **preocupaciones transversales** (cross-cutting concerns) de la lógica de negocio: cosas que se repetirían en muchos sitios — **logging, seguridad/control de acceso, transacciones, manejo de excepciones, validación, métricas/tiempos**.\n\nConceptos: **aspecto** (el módulo transversal), **advice** (`@Before`, `@After`, `@Around`), **pointcut** (`@Pointcut` — *dónde* se aplica), **join point** (punto de ejecución interceptable). En Spring se implementa con **proxies** (de ahí el caveat de self-invocation). El propio `@Transactional` y `@Cacheable` son AOP. Beneficio: menos duplicación y lógica de negocio limpia."
+    },
+    {
+      "id": "spring-11", "topicId": "spring", "tags": ["aop", "rendimiento"], "difficulty": "medium",
+      "question": "¿Cómo evitarías que un aspecto penalice el rendimiento?",
+      "answer": "- **Afinar el `@Pointcut`** al mínimo: que solo se ejecute donde interesa, no en cada método. Un pointcut demasiado amplio intercepta de más y añade overhead a todo.\n- **Trabajo asíncrono** para efectos no críticos (logging, métricas) → no bloquea el flujo de la petición.\n- **Advice ligero**: nada de I/O pesado dentro de un `@Around`.\n- **No usarlo en zonas calientes/críticas** si no aporta valor real.\n- **Monitorizar** (APM, métricas) para confirmar si el aspecto realmente afecta y actuar en consecuencia.\n\nLa idea: el coste de AOP es la interceptación + el cuerpo del advice; controla ambos."
+    },
+    {
+      "id": "async-8", "topicId": "async", "tags": ["reactivo", "spring"], "difficulty": "medium",
+      "question": "¿Para qué se usa la reactividad en Spring y qué ventajas tiene frente a lo imperativo?",
+      "answer": "La **reactividad en Spring** (WebFlux + Project Reactor: `Mono<T>` para 0/1 y `Flux<T>` para 0..N) procesa peticiones/eventos de forma **no bloqueante y asíncrona** sobre un event loop con **pocos threads**, reaccionando a medida que llegan los datos.\n\nVentajas frente a lo **imperativo/bloqueante** (Spring MVC):\n- **No hay bloqueos**: un thread atiende muchas peticiones mientras esperan I/O → mejor uso de recursos bajo **alta concurrencia con I/O**.\n- **Backpressure**: el consumidor controla el ritmo del productor.\n- Composición de streams con operadores (`map`, `flatMap`, `zip`).\n\nCoste: curva de aprendizaje, depuración más difícil y necesita **toda la cadena no bloqueante** (R2DBC, WebClient). Para un CRUD sencillo, MVC imperativo suele ser más simple y suficiente."
+    },
+    {
+      "id": "async-9", "topicId": "async", "tags": ["sync", "futures"], "difficulty": "easy",
+      "question": "¿Cómo convertirías un método asíncrono en síncrono?",
+      "answer": "Bloqueando hasta obtener el resultado:\n- **`CompletableFuture`**: `.join()` (no lanza checked) o `.get()` (lanza checked, admite timeout).\n- **`Future`**: `.get()` (opcionalmente con timeout).\n- **Hilos**: `thread.join()` espera a que termine.\n- **Sincronizadores**: `CountDownLatch` (esperar a N tareas), `CyclicBarrier`, `Phaser`.\n- **Reactor**: `mono.block()` / `flux.blockFirst()` — **solo fuera del event loop**.\n\nOjo: bloquear anula la ventaja del asincronismo; hazlo solo en el **borde** (un `main`, un test, un job) y **nunca dentro de un flujo reactivo**."
+    },
+    {
+      "id": "arch-11", "topicId": "arch", "tags": ["hexagonal", "controller", "dto"], "difficulty": "medium",
+      "question": "¿Dónde van el REST controller y los DTOs en arquitectura hexagonal?",
+      "answer": "El REST controller es un **adapter de entrada (driving/primary)**. Hay dos convenciones sobre dónde vive físicamente:\n- **Ports & adapters clásica**: en **infraestructura/adapters**, junto a los demás adaptadores de E/S; `application` solo contiene los **casos de uso** (puertos de entrada) y orquestación.\n- **Otra convención** lo sitúa en una capa **application** entendida como \"borde/punto de entrada\", dejando en infraestructura lo puramente técnico (incluso quedando `application` casi vacío salvo el arranque).\n\nLo que **no** cambia: el controller no tiene lógica de negocio, solo traduce HTTP ↔ caso de uso e invoca un **puerto de entrada**. Los **DTOs de request/response viven junto al controller** (son el contrato del borde) y se mapean a/desde el dominio. Si hay DTOs para hablar con otra API (cliente saliente), van junto a **ese** adaptador. Regla: el dominio nunca conoce DTOs ni HTTP."
+    },
+    {
+      "id": "arch-12", "topicId": "arch", "tags": ["hexagonal", "repositorio"], "difficulty": "medium",
+      "question": "¿Dónde meterías un repositorio en arquitectura hexagonal y por qué?",
+      "answer": "La **interfaz** del repositorio se declara en el **dominio** (o aplicación) como un **puerto de salida** (driven port): el dominio dice \"necesito guardar/recuperar pedidos\" sin saber cómo. La **implementación** concreta vive en **infraestructura** (adaptador): JPA, MongoDB, un cliente HTTP, in-memory…\n\n¿Por qué? Por **inversión de dependencias**: el dominio no depende de la tecnología, la tecnología depende del dominio. Así puedes tener **varias implementaciones** (PostgreSQL, Mongo, fake para tests) e intercambiarlas sin tocar la lógica. Es lo que hace el núcleo **testeable y portable**."
+    },
+    {
+      "id": "arch-13", "topicId": "arch", "tags": ["hexagonal", "infraestructura"], "difficulty": "easy",
+      "question": "¿Para qué sirve la capa de infraestructura en arquitectura hexagonal?",
+      "answer": "Contiene las **implementaciones concretas acopladas a una tecnología**: adaptadores de persistencia (JPA/Mongo), clientes HTTP, productores/consumidores de Kafka/RabbitMQ, configuración de Spring, mapeadores y (según convención) los controllers.\n\nEs el \"**cómo**\" técnico: **implementa los puertos de salida** que define el dominio y expone los de entrada. Su razón de ser es **aislar todo lo volátil/tecnológico en el borde** para que el núcleo de negocio permanezca **puro, estable y testeable** sin necesidad de levantar BD ni frameworks."
+    },
+    {
+      "id": "arch-14", "topicId": "arch", "tags": ["microservicios"], "difficulty": "medium",
+      "question": "¿Microservicios o monolito? ¿Cuándo cada uno?",
+      "answer": "- **Monolito**: un despliegue único. Más simple de desarrollar, depurar y desplegar al inicio; **transacciones ACID locales**; menos latencia. Escala como un bloque y puede degenerar en *big ball of mud*.\n- **Microservicios**: servicios pequeños, desplegables de forma **independiente**, por capacidad de negocio/bounded context. Ventajas: escalado y despliegue independientes, ownership por equipo, aislamiento de fallos, libertad tecnológica. Coste: **complejidad distribuida** (red, consistencia eventual, observabilidad, versionado de contratos, un almacén por servicio).\n\nRegla sensata: empieza por un **monolito bien modularizado** y extrae microservicios cuando el dolor (escalado, nº de equipos, cadencia de despliegue) lo justifique. No por moda."
+    },
+    {
+      "id": "arch-15", "topicId": "arch", "tags": ["microservicios", "patrones"], "difficulty": "hard",
+      "question": "¿Qué patrones habituales usarías en una arquitectura de microservicios?",
+      "answer": "- **API Gateway**: entrada única (routing, auth, rate limiting, agregación).\n- **Service discovery** (Eureka, Consul, DNS de k8s): localizar instancias dinámicamente.\n- **Circuit breaker** (Resilience4j): cortar llamadas a un servicio caído y degradar con gracia; + **retries con backoff**, timeouts, bulkheads.\n- **Config centralizada** (Spring Cloud Config); **service mesh** (Istio).\n- **Comunicación**: sync (REST/gRPC) vs async (Kafka/RabbitMQ) — eventos para desacoplar.\n- **Datos**: database-per-service; **saga** para consistencia distribuida; **outbox** para publicar eventos de forma fiable.\n- **Observabilidad**: logs centralizados, métricas y **tracing distribuido** (correlación de peticiones)."
+    },
+    {
+      "id": "msg-7", "topicId": "msg", "tags": ["rabbitmq"], "difficulty": "medium",
+      "question": "¿Cómo funciona RabbitMQ (exchanges, colas, routing)?",
+      "answer": "**RabbitMQ** es un broker **AMQP** basado en *routing*. Flujo: el productor publica a un **exchange**, que enruta a una o varias **queues** según los **bindings** y la **routing key**. Tipos de exchange:\n- **direct**: routing key exacta → cola.\n- **topic**: patrones con comodines (`pedido.*.creado`, `#`).\n- **fanout**: broadcast a todas las colas enlazadas (ignora la key).\n- **headers**: enruta por cabeceras.\n\nLos consumidores leen de **colas** y hacen **ack/nack**; sin ack, el mensaje se **reentrega**. **prefetch** (QoS) limita cuántos mensajes sin ack recibe un consumer (reparto justo). Los fallidos van a una **DLX/DLQ**. A diferencia de Kafka, el mensaje **se borra al consumirse** (no es un log persistente reproducible)."
+    },
+    {
+      "id": "msg-8", "topicId": "msg", "tags": ["kafka", "rabbitmq"], "difficulty": "medium",
+      "question": "¿Cuándo usarías Kafka y cuándo RabbitMQ?",
+      "answer": "- **Kafka**: **log distribuido persistente** y particionado. Los mensajes se **retienen** (no se borran al leerse) → se pueden **reproducir**; brillante para **alto throughput**, streaming, event sourcing y varios *consumer groups* leyendo lo mismo. Orden garantizado **por partición**.\n- **RabbitMQ**: broker de **colas/routing** (AMQP). Routing flexible (exchanges), entrega *push* con ack; ideal para **colas de tareas/comandos**, RPC y enrutado complejo, donde el mensaje se consume y desaparece.\n\nRegla: **Kafka** para streams de eventos de alto volumen y reproducibles; **RabbitMQ** para mensajería de comandos/tareas con enrutado fino y menor volumen. No es raro usar ambos en el mismo sistema."
+    },
+    {
+      "id": "msg-9", "topicId": "msg", "tags": ["kafka", "orden"], "difficulty": "medium",
+      "question": "¿Cómo garantizas el orden al leer mensajes de Kafka? ¿Cuántos puedes leer a la vez?",
+      "answer": "**Orden**: Kafka solo lo garantiza **dentro de una partición**. Para que dos mensajes se lean en orden, deben ir a la **misma partición** → usa la **misma clave de particionado** (Kafka hace `hash(key) % nº_particiones`). Si produces sin clave (round-robin), pueden acabar en particiones distintas y perder el orden relativo.\n\n**¿Cuántos lees a la vez?** Depende de la **configuración del consumer**, no es fijo: `max.poll.records` limita cuántos devuelve cada `poll()`; `fetch.min.bytes`/`max.partition.fetch.bytes` el tamaño. El **paralelismo real** lo dan las particiones: máximo de consumers activos por grupo = nº de particiones."
+    },
+    {
+      "id": "msg-10", "topicId": "msg", "tags": ["kafka", "particiones"], "difficulty": "medium",
+      "question": "¿Para qué sirven las particiones en Kafka y cómo diriges un mensaje a una concreta?",
+      "answer": "Las **particiones** son la unidad de **escalabilidad, paralelismo y tolerancia a fallos**: un topic se divide en N particiones, cada una es un **log ordenado e independiente** que puede vivir en brokers distintos y replicarse. Más particiones = más consumers en paralelo dentro de un grupo (máx. = nº de particiones).\n\nPara enviar a una **partición concreta**: produce con una **clave (key)** y Kafka aplica `hash(key) % nº_particiones` → misma key, misma partición (y por tanto **orden por key**). También puedes indicar la partición explícitamente o implementar un `Partitioner` propio. Sin key, reparte round-robin."
+    },
+    {
+      "id": "rest-9", "topicId": "rest", "tags": ["crud", "verbos"], "difficulty": "easy",
+      "question": "¿Qué URLs y verbos usarías para el CRUD de una entidad restaurant?",
+      "answer": "Convención REST para el recurso `restaurants`:\n```\nGET    /restaurants        → lista (colección)\nGET    /restaurants/{id}    → uno concreto\nPOST   /restaurants        → crea (201 Created + header Location)\nPUT    /restaurants/{id}    → reemplazo total\nPATCH  /restaurants/{id}    → actualización parcial\nDELETE /restaurants/{id}    → elimina (204 No Content)\n```\nReglas: **sustantivos en plural**, nunca verbos en la URL (`/getRestaurants` ❌); la **jerarquía** expresa relaciones (`/restaurants/{id}/reviews`); usa **query params** para filtrar/paginar/ordenar (`?city=madrid&page=2&sort=name`); y códigos correctos (200/201/204/404)."
+    },
+    {
+      "id": "sql-9", "topicId": "sql", "tags": ["joins"], "difficulty": "easy",
+      "question": "¿Diferencia entre INNER JOIN y RIGHT JOIN? ¿Cuál devuelve más tuplas?",
+      "answer": "- **INNER JOIN**: solo la **intersección** — filas con coincidencia en ambas tablas.\n- **RIGHT (OUTER) JOIN**: la intersección **más** todas las filas de la tabla **derecha** que no casan (con NULLs en las columnas de la izquierda).\n\n**¿Cuál devuelve más?** El **RIGHT JOIN ≥ INNER JOIN**: nunca menos, porque incluye lo mismo que el inner más las filas sueltas de la derecha. Solo empatan si **todas** las filas de la derecha tienen coincidencia. (Mismo razonamiento para LEFT respecto a la tabla izquierda.)"
+    },
+    {
+      "id": "test-1", "topicId": "test", "tags": ["tdd"], "difficulty": "medium",
+      "question": "¿Qué es TDD y en qué consiste el ciclo red-green-refactor?",
+      "answer": "**TDD** (Test-Driven Development) es escribir el **test antes** que el código, en ciclos cortos **Red-Green-Refactor**:\n1. **Red**: escribes un test que falla (define el comportamiento deseado).\n2. **Green**: el **código mínimo** para que pase.\n3. **Refactor**: limpias el diseño manteniendo los tests en verde.\n\nQué aporta: diseño guiado por el uso (APIs más claras), **cobertura por construcción**, una **red de seguridad** para refactorizar y feedback inmediato. No es \"testing\" sin más: es una técnica de **diseño**. Variante: **BDD** (Given-When-Then) centrada en el comportamiento de negocio."
+    },
+    {
+      "id": "test-2", "topicId": "test", "tags": ["mock", "spy"], "difficulty": "easy",
+      "question": "¿Cuál es la diferencia entre un Mock y un Spy?",
+      "answer": "- **Mock**: objeto **falso** (proxy) que sustituye una dependencia. Por defecto sus métodos **no hacen nada** / devuelven valores vacíos; **tú** defines su comportamiento con `when(...).thenReturn(...)`. No ejecuta código real.\n- **Spy**: envuelve una **instancia real**; por defecto **ejecuta el código real**, pero puedes stubbear métodos concretos.\n\nRegla: usa **mock** para aislar por completo la dependencia (lo habitual en tests unitarios); usa **spy** cuando quieres el comportamiento real salvo una pieza. Abusar del spy suele ser un *code smell* (probar implementación en vez de comportamiento)."
+    },
+    {
+      "id": "test-3", "topicId": "test", "tags": ["mockito", "spring"], "difficulty": "medium",
+      "question": "¿Diferencia entre @Mock/@Spy y @MockBean/@SpyBean?",
+      "answer": "- **`@Mock` / `@Spy`** (Mockito): crean el doble en el **test**, sin contexto de Spring. Para **tests unitarios** puros (rápidos). Se inyectan con `@InjectMocks`.\n- **`@MockBean` / `@SpyBean`** (Spring Boot Test): crean el doble y lo **registran en el ApplicationContext**, **reemplazando** el bean real. Para **tests de integración** con `@SpringBootTest`/slices donde Spring inyecta dependencias.\n\nDiferencia clave: el `…Bean` mete el doble en el **contexto de Spring** (y al modificar el contexto puede **invalidar su caché** → suites más lentas). Usa Mockito puro cuando no necesites levantar el contexto."
+    },
+    {
+      "id": "test-4", "topicId": "test", "tags": ["unit", "integracion"], "difficulty": "easy",
+      "question": "¿Diferencia entre prueba unitaria y de integración? ¿Cuándo prefieres cada una?",
+      "answer": "- **Unitaria**: verifica una **unidad aislada** (clase/método) con sus dependencias **mockeadas**. Rápida, determinista, sin BD/red. Prueba **lógica**.\n- **Integración**: verifica que **varias piezas colaboran** de verdad, incluyendo infraestructura real o casi real (BD, repositorios, HTTP, mensajería). Más lenta; prueba la **fontanería**: mapeos JPA, queries, serialización, configuración de Spring.\n\nCuándo: la **mayoría unitarias** (base de la pirámide); **integración** donde el riesgo está en la integración (persistencia, controllers, clientes). Para integración con BD/Kafka reales → **Testcontainers**."
+    },
+    {
+      "id": "test-5", "topicId": "test", "tags": ["piramide"], "difficulty": "medium",
+      "question": "¿Qué es la pirámide de testing?",
+      "answer": "Propone una proporción sana de tipos de test:\n- **Base — unit** (muchos): rápidos, aislados, baratos. El grueso.\n- **Medio — integración** (algunos): colaboración entre componentes/infra.\n- **Cima — E2E / UI** (pocos): flujo completo de usuario, lentos y frágiles.\n\nIdea: cuanto más arriba, más caro y lento → ten menos. El **antipatrón** es el *cono de helado* (muchos E2E, pocos unit): suites lentas e inestables. Complemento moderno en microservicios: **contract testing** (Pact) para validar integraciones sin depender de E2E."
+    },
+    {
+      "id": "test-6", "topicId": "test", "tags": ["carga", "rendimiento"], "difficulty": "medium",
+      "question": "¿Qué son las pruebas de carga/rendimiento y qué métricas miras?",
+      "answer": "Verifican cómo se comporta el sistema bajo demanda (no si es funcionalmente correcto). Tipos:\n- **Load**: carga esperada sostenida.\n- **Stress**: subir hasta romperlo (encontrar el límite).\n- **Spike**: picos súbitos.\n- **Soak/endurance**: carga moderada mucho tiempo (detecta fugas de memoria).\n\nMétricas: **throughput** (req/s), **latencia** (media y sobre todo **percentiles p95/p99**, más honestos que la media), **tasa de error**, uso de CPU/memoria. Herramientas: **JMeter, Gatling, k6, Locust**. Se integran en CI con **umbrales/SLOs** que rompen el build si el rendimiento se degrada."
+    },
+    {
+      "id": "test-7", "topicId": "test", "tags": ["spring", "testcontainers"], "difficulty": "medium",
+      "question": "¿Cómo estructuras tests en Spring (slices, Testcontainers)?",
+      "answer": "- **`@SpringBootTest`**: levanta el **contexto completo**. Integración end-to-end de la app; más lento.\n- **Slices** (cargan solo una parte): `@WebMvcTest` (web/controllers + `MockMvc`), `@DataJpaTest` (repositorios + BD), `@JsonTest`, `@RestClientTest`. Más rápidos y enfocados.\n- **`MockMvc` / `WebTestClient`**: ejercitan endpoints sin servidor real.\n- **Testcontainers**: arranca **Postgres/Kafka/RabbitMQ reales** en Docker para integración fiel (mejor que H2, que miente con dialectos).\n\nConsejo: minimiza el número de **contextos distintos** (Spring los cachea por configuración) para que la suite no se dispare."
+    },
+    {
+      "id": "test-8", "topicId": "test", "tags": ["solid", "clean-code"], "difficulty": "medium",
+      "question": "¿Qué son los principios SOLID?",
+      "answer": "Cinco principios de diseño OO:\n- **S — Single Responsibility**: una clase, una razón para cambiar.\n- **O — Open/Closed**: abierta a extensión, cerrada a modificación.\n- **L — Liskov Substitution**: una subclase debe poder sustituir a su base sin romper el contrato.\n- **I — Interface Segregation**: interfaces pequeñas y específicas, no *god interfaces*.\n- **D — Dependency Inversion**: depende de **abstracciones**, no de implementaciones — la base de hexagonal: el dominio define puertos y la infraestructura los implementa.\n\nObjetivo: código **mantenible, extensible y testeable**. Encajan de lleno con arquitectura hexagonal y Clean Code."
+    },
+    {
+      "id": "test-9", "topicId": "test", "tags": ["clean-code"], "difficulty": "easy",
+      "question": "¿Qué prácticas de Clean Code aplicas?",
+      "answer": "- **Nombres reveladores** de intención (nada de `data2`, `tmp`).\n- **Funciones pequeñas** que hacen **una sola cosa**, con pocos parámetros y sin efectos colaterales ocultos.\n- **DRY**: no duplicar conocimiento.\n- **Comentarios** solo para el *por qué*, no el *qué* (el código expresa el qué).\n- Evitar **code smells**: métodos largos, clases-dios, números mágicos, anidamiento profundo, *primitive obsession*.\n- **Boy Scout Rule**: deja el código mejor de como lo encontraste.\n- **Tests** como red de seguridad para refactorizar.\n\nFin: optimizar para la **lectura** (se lee mucho más de lo que se escribe) y reducir el coste de cambio — *desarrollo sostenible*."
+    },
+    {
+      "id": "test-10", "topicId": "test", "tags": ["buenas-practicas"], "difficulty": "medium",
+      "question": "¿Cómo es un buen test (AAA / Given-When-Then, FIRST)?",
+      "answer": "Estructura con **AAA / Given-When-Then**: *Given* (arrange: prepara estado y mocks) · *When* (act: ejecuta lo que pruebas) · *Then* (assert: verifica resultado y/o interacciones).\n\nUn buen test cumple **FIRST**:\n- **F**ast (rápido), **I**ndependent (no depende de otros ni del orden), **R**epeatable (mismo resultado siempre, sin depender de fecha/red), **S**elf-validating (pasa/falla solo), **T**imely (escrito a tiempo, idealmente antes — TDD).\n\nAdemás: **un concepto por test**, nombre que describe el comportamiento, asserts claros, y probar **comportamiento** (qué hace) no implementación (cómo)."
+    },
+    {
+      "id": "redis-1", "topicId": "redis", "tags": ["fundamentos"], "difficulty": "easy",
+      "question": "¿Qué es Redis y por qué usarlo en vez de una caché in-memory local?",
+      "answer": "**Redis** es un almacén **clave-valor en memoria** (in-memory data store) que funciona como servidor independiente, usable como **caché, base de datos o broker**. Es extremadamente rápido (latencia sub-milisegundo).\n\nFrente a una caché **in-memory local** (un `Map`/Caffeine dentro del proceso):\n- **Compartida entre instancias**: con 10 pods, todos ven la misma caché (la local se duplicaría e incoherente).\n- **Sobrevive al reinicio** del servicio (y opcionalmente persiste).\n- Ofrece **estructuras ricas**, TTL, pub/sub, locks distribuidos, atomicidad.\n\nCoste: un *hop* de red y una pieza más de infraestructura. La caché local sigue siendo válida para datos por-instancia y latencia mínima (incluso combinadas: *near cache*)."
+    },
+    {
+      "id": "redis-2", "topicId": "redis", "tags": ["estructuras"], "difficulty": "medium",
+      "question": "¿Qué estructuras de datos ofrece Redis y para qué sirven?",
+      "answer": "- **String**: valor simple (texto, número, JSON, binario); contadores atómicos (`INCR`).\n- **Hash**: mapa de campos → ideal para representar un objeto (`user:1 {name, email}`).\n- **List**: lista enlazada → colas/pilas (`LPUSH`/`RPOP`).\n- **Set**: conjunto sin orden, únicos → tags, miembros; operaciones de conjuntos.\n- **Sorted Set (ZSet)**: set con *score* → **rankings/leaderboards**, colas de prioridad, rate limiting por ventana.\n- **Stream**: log de eventos append-only con consumer groups (estilo Kafka ligero).\n- **Bitmap / HyperLogLog**: flags y conteos aproximados de cardinalidad con poca memoria.\n- **Geospatial**: consultas por proximidad.\n\nElegir la estructura adecuada es la clave para sacarle partido a Redis."
+    },
+    {
+      "id": "redis-3", "topicId": "redis", "tags": ["ttl", "eviction"], "difficulty": "medium",
+      "question": "¿Cómo funcionan el TTL y las políticas de expiración/eviction en Redis?",
+      "answer": "Puedes asignar un **TTL** a una clave (`EXPIRE key 60`, `SET key val EX 60`); al vencer, Redis la borra (combina expiración **lazy** al accederla + un proceso periódico).\n\nCuando se llena la memoria (`maxmemory`), entra la **política de eviction**:\n- **noeviction**: rechaza escrituras (errores).\n- **allkeys-lru / volatile-lru**: descarta las menos usadas recientemente (todas / solo con TTL).\n- **allkeys-lfu / volatile-lfu**: las menos **frecuentemente** usadas.\n- **volatile-ttl**: las de TTL más próximo.\n- **random**.\n\nPara caché pura, `allkeys-lru`/`lfu` es lo típico. El TTL es además tu defensa contra datos *stale*."
+    },
+    {
+      "id": "redis-4", "topicId": "redis", "tags": ["patrones", "cache"], "difficulty": "medium",
+      "question": "¿Qué patrones de caché conoces (cache-aside, write-through…)?",
+      "answer": "- **Cache-aside (lazy loading)**: la app consulta la caché; si **miss**, lee de la BD, guarda en caché y devuelve. El más común. Riesgo: primera lectura lenta y posible *stale* (mitigado con TTL).\n- **Read-through**: la caché misma carga de la BD en el miss (transparente para la app).\n- **Write-through**: cada escritura va a caché **y** BD de forma síncrona → consistente, pero escritura más lenta.\n- **Write-behind (write-back)**: escribe en caché y persiste a BD **asíncronamente** → rápido, riesgo de pérdida si cae antes de volcar.\n\nClave aparte: **invalidación**. \"Solo hay dos cosas difíciles en informática: invalidar cachés y nombrar variables\". Usa TTL + invalidación por evento."
+    },
+    {
+      "id": "redis-5", "topicId": "redis", "tags": ["usos"], "difficulty": "medium",
+      "question": "Más allá de caché, ¿para qué se usa Redis?",
+      "answer": "- **Sesiones** compartidas entre instancias (session store).\n- **Rate limiting** (contadores con TTL, sliding window con ZSet).\n- **Colas / jobs** (Lists, o **Streams** con consumer groups).\n- **Pub/Sub** para notificaciones en tiempo real (fire-and-forget, sin persistencia).\n- **Locks distribuidos** (`SET key val NX PX ttl`, Redlock).\n- **Leaderboards / rankings** (Sorted Sets).\n- **Contadores y métricas** atómicos (`INCR`).\n- **Feature flags**, **deduplicación** (Sets/HyperLogLog), datos geoespaciales.\n\nEs un \"multiusos\" de baja latencia; por eso se le llama *data structure server*, no solo caché."
+    },
+    {
+      "id": "redis-6", "topicId": "redis", "tags": ["locks", "concurrencia"], "difficulty": "hard",
+      "question": "¿Cómo implementas un lock distribuido con Redis y qué cuidados tiene?",
+      "answer": "Lock básico: **`SET lock:recurso <token-único> NX PX 30000`** — `NX` solo lo crea si no existe (adquiere); `PX` le pone TTL (evita deadlock si el dueño muere). Para **liberar** de forma segura, un script Lua que comprueba que el token es tuyo antes de borrar (no borrar el lock de otro).\n\nCuidados:\n- **TTL bien dimensionado**: si la tarea dura más que el TTL, otro podría entrar → *fencing tokens* o renovación (*watchdog*).\n- **Token único** por dueño para no liberar locks ajenos.\n- En cluster, un solo nodo no es 100% seguro ante failover → **Redlock** (varios nodos), aunque es debatido. Para corrección estricta, a veces es mejor un lock en BD.\n\nRedisson encapsula estos patrones en Java."
+    },
+    {
+      "id": "redis-7", "topicId": "redis", "tags": ["persistencia"], "difficulty": "medium",
+      "question": "¿Redis pierde los datos al reiniciar? (RDB vs AOF)",
+      "answer": "No necesariamente: Redis es in-memory pero ofrece **persistencia** en disco:\n- **RDB (snapshot)**: vuelca el dataset a un fichero cada cierto tiempo/condición. Compacto y rápido de cargar, pero puedes **perder** lo escrito desde el último snapshot.\n- **AOF (Append-Only File)**: registra cada operación de escritura; al reiniciar las reproduce. Más **durable** (puedes hacer `fsync` por segundo o por escritura), pero ficheros mayores y carga más lenta.\n- **Híbrido** (RDB+AOF) es lo recomendado hoy.\n\nSi usas Redis como **caché pura**, puedes desactivar la persistencia (los datos se recuperan de la BD). Para datos de verdad, activa AOF + replicación."
+    },
+    {
+      "id": "redis-8", "topicId": "redis", "tags": ["arquitectura"], "difficulty": "medium",
+      "question": "¿Por qué Redis es tan rápido y cómo escala (single-thread, cluster)?",
+      "answer": "Es rápido porque trabaja **en memoria** y procesa los comandos en un **único hilo** con un *event loop* (I/O multiplexado): sin locks ni cambios de contexto, cada comando es **atómico** y no hay condiciones de carrera entre comandos. (Las versiones modernas usan hilos solo para I/O de red, no para la lógica.)\n\nEscalado:\n- **Replicación** primario-réplicas para lecturas y alta disponibilidad (+ **Sentinel** para failover).\n- **Redis Cluster**: **sharding** por *hash slots* (16384) repartiendo claves entre nodos → escala escritura y memoria horizontalmente.\n\nLímite: como es un solo hilo de cómputo, un comando costoso (`KEYS *`, grandes `SORT`) bloquea a todos; evítalos en producción (usa `SCAN`)."
+    },
+    {
+      "id": "contracts-1", "topicId": "contracts", "tags": ["openapi"], "difficulty": "easy",
+      "question": "¿Qué es OpenAPI y qué es contract-first vs code-first?",
+      "answer": "**OpenAPI** (antes Swagger) es una **especificación** para describir APIs REST en un documento (YAML/JSON): endpoints, parámetros, *request/response bodies*, **schemas**, códigos de estado, seguridad. Es **lenguaje-agnóstico** y legible por humanos y máquinas.\n\n- **Contract-first**: escribes **primero el OpenAPI** (el contrato) y de ahí generas/derivas el código. El contrato manda.\n- **Code-first**: anotas el código (`@Operation`, `springdoc`) y el OpenAPI se **genera** desde él.\n\nVentajas del contrato como fuente de verdad: equipos front/back trabajan en paralelo, validación temprana, *mock servers*, generación de clientes y detección de *breaking changes*."
+    },
+    {
+      "id": "contracts-2", "topicId": "contracts", "tags": ["openapi", "codegen"], "difficulty": "medium",
+      "question": "¿Cómo se relaciona un OpenAPI con el código en contract-first (codegen)?",
+      "answer": "Con **`openapi-generator`** (o swagger-codegen) generas, a partir del YAML, una **interfaz Java** por cada operación + los **DTOs** (modelos) y validaciones. Tu **REST controller la implementa**: el contrato es la fuente de verdad y el código se adapta.\n\nFlujo típico (plugin Maven/Gradle en el build):\n1. El YAML vive en el repo (o en un registro de contratos).\n2. El build genera interfaces + modelos en `target/generated-sources`.\n3. El controller `implements` la interfaz generada.\n\nBeneficios: si el contrato cambia de forma incompatible, **no compila** (detección temprana de breaking changes); DTOs y validaciones siempre **consistentes** con el spec; y puedes generar el **cliente** para los consumidores. En hexagonal, todo esto vive en el **borde/infraestructura**."
+    },
+    {
+      "id": "contracts-3", "topicId": "contracts", "tags": ["asyncapi"], "difficulty": "medium",
+      "question": "¿Qué es AsyncAPI y en qué se diferencia de OpenAPI?",
+      "answer": "**AsyncAPI** es el equivalente a OpenAPI pero para **arquitecturas dirigidas por eventos / mensajería** (Kafka, RabbitMQ, MQTT, WebSockets), en vez de REST request-response.\n\nDescribe: **channels** (topics/colas), **operaciones** (publish/subscribe), los **mensajes** y sus **payloads/schemas**, y los **bindings** del broker concreto (p.ej. config de Kafka). Misma filosofía contract-first: documentar el contrato de los eventos, generar código/documentación, validar payloads y versionar.\n\nDiferencia clave: OpenAPI modela **quién llama a quién y qué devuelve** (síncrono); AsyncAPI modela **quién publica y quién consume qué eventos** (asíncrono, desacoplado). En un sistema con microservicios + Kafka/Rabbit, sueles tener **ambos**."
+    },
+    {
+      "id": "contracts-4", "topicId": "contracts", "tags": ["versionado"], "difficulty": "medium",
+      "question": "¿Cómo versionas una API y manejas los breaking changes?",
+      "answer": "Un **breaking change** rompe a los consumidores existentes (quitar/renombrar un campo, cambiar su tipo, hacer obligatorio uno nuevo, cambiar semántica). Cambios **no rompedores**: añadir campos opcionales, nuevos endpoints.\n\nEstrategias de versionado:\n- **En la URL**: `/v1/...`, `/v2/...` (lo más explícito y común).\n- **Por header** (`Accept: application/vnd.api.v2+json`) o query param.\n\nBuenas prácticas: mantén **compatibilidad hacia atrás** mientras puedas (evolución aditiva), **deprecación** anunciada con periodo de gracia, y soporta **N y N-1** en paralelo. El contrato (OpenAPI/AsyncAPI) ayuda a **detectar** automáticamente los breaking changes en CI (diff de specs)."
+    },
+    {
+      "id": "contracts-5", "topicId": "contracts", "tags": ["kafka", "schema-registry"], "difficulty": "hard",
+      "question": "¿Qué es un Schema Registry y por qué importa la evolución de esquemas en Kafka?",
+      "answer": "Un **Schema Registry** (Confluent, Apicurio) almacena y versiona los **esquemas** de los mensajes (Avro, Protobuf o JSON Schema) que circulan por los topics. El productor serializa con un *schema id*; el consumidor lo recupera del registry para deserializar. Evita meter el esquema en cada mensaje y **desacopla** a productores/consumidores.\n\nLa **evolución de esquemas** define qué cambios se permiten sin romper:\n- **Backward**: un consumidor con el esquema nuevo puede leer datos viejos (p.ej. añadir campo con default).\n- **Forward**: un consumidor con el esquema viejo puede leer datos nuevos.\n- **Full**: ambas.\n\nEl registry **valida la compatibilidad** al registrar una versión nueva y **rechaza** cambios incompatibles → seguridad en sistemas event-driven donde productor y consumidor despliegan por separado."
+    },
+    {
+      "id": "contracts-6", "topicId": "contracts", "tags": ["contract-testing"], "difficulty": "hard",
+      "question": "¿Qué es el consumer-driven contract testing (p.ej. Pact)?",
+      "answer": "En microservicios, los tests **E2E** entre servicios son lentos y frágiles. El **contract testing** verifica que dos servicios **acuerdan un contrato** sin desplegarlos juntos:\n\n- **Consumer-driven** (Pact): el **consumidor** define qué espera de la API (un *pact*); ese contrato se verifica contra el **proveedor** en su propio pipeline. Si el proveedor rompe algo que un consumidor usa, **falla su build**.\n\nVentajas: detecta *breaking changes* **antes** de desplegar, cada servicio se testea **aislado** (rápido), y documenta las expectativas reales. Complementa a OpenAPI/AsyncAPI: el spec define la forma; el contract test verifica las **interacciones concretas** que un consumidor depende. Encaja en la cima de la pirámide en lugar de E2E."
+    },
+    {
+      "id": "spring-12", "topicId": "spring", "tags": ["mapstruct"], "difficulty": "medium",
+      "question": "¿Qué es MapStruct y por qué usarlo en lugar de mapear a mano o con reflexión?",
+      "answer": "**MapStruct** es un generador de **mappers en tiempo de compilación**: declaras una `interface` con `@Mapper` y los métodos de conversión, y un *annotation processor* genera el código de mapeo (puro Java, sin reflexión).\n\nVentajas: **rápido** (no usa reflexión como ModelMapper), **seguro en compilación** (si falta un campo o no casa un tipo, avisa al compilar), y mantiene el mapeo **explícito y testeable**. En hexagonal es clave para traducir entre capas: dominio ↔ DTO REST, dominio ↔ DTO de Kafka, entidad de persistencia ↔ dominio.\n\nBuenas prácticas (las del proyecto): un mapper por tipo, `InjectionStrategy.CONSTRUCTOR`, nada de lógica de negocio dentro, `qualifiedByName` mejor que `expression`, e ignorar campos explícitamente con `@Mapping(ignore = true)`."
+    },
+    {
+      "id": "spring-13", "topicId": "spring", "tags": ["security", "oauth2", "jwt"], "difficulty": "medium",
+      "question": "¿Cómo proteges una API con Spring Security como OAuth2 Resource Server?",
+      "answer": "Un **resource server** es una API que **valida** tokens (no los emite). Con `spring-boot-starter-oauth2-resource-server` configuras la validación de un **JWT** (Bearer):\n- Defines el **issuer**/JWKS (`spring.security.oauth2.resourceserver.jwt.issuer-uri`); Spring descarga las **claves públicas** y valida firma, `exp`, `iss`, `aud`.\n- En la `SecurityFilterChain` declaras qué rutas requieren auth y con qué *authorities*/scopes (`hasAuthority('SCOPE_x')`).\n- Los **claims** del JWT se mapean a authorities (`JwtAuthenticationConverter`).\n\nAsí la API es **stateless**: no guarda sesión, cada petición trae su token y se valida sin ir a BD. El cliente OAuth2 (`oauth2-client`) es el otro lado: obtiene el token para llamar a otros servicios (machine-to-machine, *client credentials*)."
+    },
+    {
+      "id": "db-11", "topicId": "db", "tags": ["mongodb", "nosql"], "difficulty": "medium",
+      "question": "¿Cuándo usarías MongoDB (documental) en vez de una relacional? ¿Cómo modelas?",
+      "answer": "**MongoDB** guarda **documentos** (JSON/BSON) agrupados en colecciones, sin esquema rígido. Encaja cuando:\n- Los datos son **jerárquicos/agregados** que se leen juntos (un pedido con sus líneas en un solo documento) → menos joins.\n- El **esquema evoluciona** rápido o es heterogéneo.\n- Necesitas **escalado horizontal** (sharding) y alta velocidad de escritura.\n\nModelado (distinto al relacional): **embeber vs referenciar**. Embebes lo que se lee/escribe junto y es propiedad del agregado (línea de pedido dentro del pedido); referencias (guardas el id) cuando la relación es N:M, el sub-documento crece sin límite, o se consulta por separado. No normalizas a 3FN: **modelas según los patrones de acceso**. Trade-off: sin joins ni transacciones multi-documento clásicas (aunque Mongo moderno las soporta), y duplicación controlada."
+    },
+    {
+      "id": "db-12", "topicId": "db", "tags": ["polyglot", "redis", "nosql"], "difficulty": "medium",
+      "question": "¿Qué es la persistencia políglota y cuándo combinarías varias BBDD?",
+      "answer": "**Persistencia políglota**: usar el **almacén adecuado para cada necesidad** dentro del sistema, en vez de forzar todo en una sola BD. Ejemplos de combinación:\n- **Relacional** (Postgres/Oracle) para datos transaccionales con integridad fuerte.\n- **Documental** (MongoDB) para agregados que se leen juntos y esquema flexible.\n- **Redis** como **caché**, sesiones, rate limiting o locks distribuidos.\n- **Búsqueda** (Elasticsearch) para full-text.\n- **Object storage** (S3/MinIO) para ficheros/binarios.\n\nEn microservicios encaja con **database-per-service**: cada servicio elige su almacén. Coste: más piezas que operar, consistencia eventual entre ellas y sincronización (eventos/CDC). La regla: justifícalo por el patrón de acceso, no por coleccionar tecnologías."
+    },
+    {
+      "id": "arch-16", "topicId": "arch", "tags": ["observabilidad", "resiliencia"], "difficulty": "medium",
+      "question": "¿Cómo aportas observabilidad y resiliencia a un microservicio?",
+      "answer": "**Observabilidad** (los tres pilares):\n- **Métricas**: Micrometer + **Prometheus** (latencias, throughput, errores, JVM); dashboards en Grafana.\n- **Logs** estructurados (JSON, p.ej. logstash-logback-encoder) centralizados, con **correlation/trace id**.\n- **Trazas distribuidas**: **OpenTelemetry** / Micrometer Tracing para seguir una petición a través de varios servicios.\n- **Actuator** expone health, info y métricas.\n\n**Resiliencia** (Resilience4j): **circuit breaker** (cortar llamadas a un servicio caído), **retry** con backoff, **timeouts**, **rate limiter**, **bulkhead** (aislar pools). Para tareas programadas en varias instancias, **ShedLock** garantiza que solo una las ejecute. Objetivo: fallar rápido, degradar con gracia y poder **diagnosticar en producción**."
+    },
+    {
+      "id": "test-11", "topicId": "test", "tags": ["wiremock", "testcontainers", "bdd"], "difficulty": "medium",
+      "question": "¿Cómo testeas integraciones con APIs externas y con infraestructura real?",
+      "answer": "- **WireMock**: levanta un **servidor HTTP simulado** que devuelve respuestas predefinidas (stubs) para las APIs externas. Pruebas tu adaptador de salida contra respuestas controladas (incluidos timeouts, 500, payloads raros) sin depender del tercero real.\n- **Testcontainers**: arranca **Mongo/Redis/Kafka reales en Docker** durante el test, así la integración con la BD/broker es **fiel** (mejor que un fake o H2 que miente con dialectos).\n- **BDD / Cucumber**: escenarios `Given/When/Then` en lenguaje de negocio para pruebas de aceptación.\n- **AsyncAPI/contract validation**: validar que los eventos publicados cumplen el contrato.\n\nEstrategia: unitarios mockeando puertos (Mockito); integración con Testcontainers + WireMock para verificar los adaptadores reales."
+    },
+    {
+      "id": "xp-1", "topicId": "xp", "tags": ["perfil"], "difficulty": "easy",
+      "question": "Háblame de ti / resume tu perfil.",
+      "answer": "**Personalízalo.** Estructura sugerida con tus datos reales:\n\n\"Ingeniero Informático (UCLM) con **6+ años** desarrollando software, **especializado en backend con Java y Spring Boot** y con recorrido full-stack (Angular, React). He trabajado en **microservicios y mensajería con Kafka** en varios proyectos (recarga de coches eléctricos en IBIL, buscador turístico, mercado mayorista) y actualmente estoy en **Agata**, una plataforma de **interoperabilidad de un puerto**: ~40 conectores en **arquitectura hexagonal estricta con Java 21, Spring Boot, DDD, Kafka y MongoDB**, con OpenAPI contract-first y testing con Testcontainers.\"\n\nCierra con motivación: te interesa el rol porque encaja con lo que ya haces (hexagonal, Kafka, DDD, clean code) y quieres profundizar. **Nota**: tu CV no está actualizado con Agata — menciónalo, es tu experiencia más relevante para esta oferta."
+    },
+    {
+      "id": "xp-2", "topicId": "xp", "tags": ["kafka", "mensajeria"], "difficulty": "medium",
+      "question": "¿Qué experiencia tienes con colas o brokers (Kafka, RabbitMQ, SQS)?",
+      "answer": "**Personalízalo — aquí tienes material real.** Tu **Kafka es fuerte**, está en varios proyectos:\n- **Agata** (actual): eventos de interoperabilidad con **Kafka + Schema Registry (JSON Schema)**, **Spring Cloud Stream**, eventos **versionados** (`x-event.v1`), validados con **AsyncAPI**; Kafka vive solo en infraestructura y los payloads son DTOs técnicos (nunca el dominio).\n- **IBIL** (recarga de coches eléctricos): microservicios Spring Boot con mensajería Kafka.\n- **Buscador turístico** y **mercado mayorista**: Apache Kafka para comunicación entre servicios.\n\nPatrones que puedes citar: particiones + clave para orden, consumer groups, idempotencia, eventos como hechos.\n\n**Honestidad para esta oferta**: piden Kafka **y RabbitMQ**. Tu fuerte es Kafka; di que **RabbitMQ lo conoces a nivel de conceptos** (exchanges direct/topic/fanout, colas, ack/prefetch, DLQ) y que el modelo de mensajería te resulta natural, pero que tu experiencia productiva es sobre todo con Kafka."
+    },
+    {
+      "id": "xp-3", "topicId": "xp", "tags": ["bbdd"], "difficulty": "easy",
+      "question": "¿Con qué bases de datos / gestores has trabajado?",
+      "answer": "**Personalízalo — material real:**\n- **Relacionales**: **Oracle** (19c y 21c, incluido **PL/SQL** y migraciones en Avanttic), y **JPA/Hibernate** sobre relacional en IBIL, mercado mayorista y proyectos antiguos (Hibernate con Tapestry en Feebbo).\n- **Documental**: **MongoDB** en Agata (Spring Data MongoDB + migraciones con **Mongock**).\n- **Key-value / caché**: **Redis** en el mercado mayorista y en Agata (caché, **Redisson**); también Couchbase y Memcached en el stack de Agata.\n\nMensaje: estás cómodo en **relacional y NoSQL documental/clave-valor**, y entiendes cuándo usar cada uno (persistencia políglota). Si te preguntan modelado relacional a fondo (3FN, joins, índices), repásalo — es donde más teoría te van a pedir."
+    },
+    {
+      "id": "xp-4", "topicId": "xp", "tags": ["hexagonal", "ddd"], "difficulty": "medium",
+      "question": "¿Qué experiencia tienes con arquitectura hexagonal y DDD?",
+      "answer": "**Personalízalo — material real (Agata):** trabajas a diario en una **arquitectura hexagonal estricta**. Puedes describir la estructura real de los conectores:\n- `domain/model` — dominio **puro**, sin frameworks ni Kafka ni persistencia; fechas con `Instant`; excepciones de dominio propias.\n- `application/{ports, service}` — casos de uso y **puertos** (interfaces de entrada y salida).\n- `infrastructure/{driving, driven}` — adaptadores: REST controllers e *listeners* Kafka (driving) y persistencia/clientes externos (driven), que **implementan** los puertos.\n\nConceptos que dominas en la práctica: dependencias **hacia el dominio**, mapeo entre capas con **MapStruct** (DTO REST/Kafka ↔ dominio), eventos Kafka como **DTOs técnicos versionados**, value objects/aggregates solo cuando aportan. Antes ya tocaste microservicios (IBIL, buscador turístico). Apóyate en un ejemplo concreto de un conector que hayas hecho."
+    },
+    {
+      "id": "xp-5", "topicId": "xp", "tags": ["microservicios"], "difficulty": "medium",
+      "question": "¿Qué experiencia tienes diseñando/desarrollando microservicios?",
+      "answer": "**Personalízalo — material real:**\n- **Agata** (actual): **~40 microservicios conectores** de interoperabilidad, cada uno hexagonal e independiente, con **BOM** compartido para versiones, **OpenAPI contract-first** (openapi-generator), seguridad **OAuth2**, observabilidad (**Prometheus + OpenTelemetry**), **Eureka**/Config en algunos, y despliegue en **Kubernetes**.\n- **IBIL**: microservicios Spring Boot (Java 11) con Kafka para recarga de coches eléctricos.\n- **Buscador turístico**: microservicios REST + Kafka.\n\nPuedes hablar de los trade-offs reales: despliegue independiente, contratos versionados, consistencia eventual vía eventos, y por qué cada conector aísla la integración con un sistema externo. Si preguntan por patrones: API gateway, circuit breaker (Resilience4j), saga, outbox."
+    },
+    {
+      "id": "xp-6", "topicId": "xp", "tags": ["testing"], "difficulty": "medium",
+      "question": "¿Cómo enfocas el testing en tu trabajo actual?",
+      "answer": "**Personalízalo — material real (Agata):** el proyecto tiene reglas de testing claras que aplicas:\n- **JUnit 5 + Mockito**, estructura **Given/When/Then**, naming `whenXxx_thenYyy`.\n- **Object Mothers** para datos de prueba realistas (`oneValidEntity()`).\n- Se **mockean solo los bordes** (adaptadores, APIs externas, BD, Kafka), **nunca** mappers, lógica de dominio ni servicios de aplicación.\n- **Testcontainers** (Mongo/Redis/Kafka reales) y **WireMock** para APIs externas; **Cucumber** para BDD; validación de contratos **AsyncAPI**.\n- Tests como **documentación**, verificar **comportamiento** no implementación.\n\n**Honestidad**: la oferta pide **TDD y pruebas de carga/rendimiento**. Si no has hecho TDD estricto siempre, di que conoces el ciclo red-green-refactor y lo aplicas donde aporta; para carga menciona el concepto (JMeter/Gatling/k6, p95/p99) aunque sea tu zona más floja."
+    },
+    {
+      "id": "xp-7", "topicId": "xp", "tags": ["ia"], "difficulty": "easy",
+      "question": "¿Qué estás haciendo con IA en tu trabajo?",
+      "answer": "**Personalízalo — material real:** en **Agata** usas **Claude Code** de forma intensiva sobre el monorepo: generar y evolucionar **conectores hexagonales** siguiendo las reglas estrictas del proyecto (CLAUDE.md: DDD, hexagonal, MapStruct, testing), escribir **tests** (Object Mothers, Given/When/Then), refactors, y explorar APIs de sistemas externos a integrar. También has trabajado en **productos con IA** (herramienta de marketing de podcasts para Voice, herramienta de inversión para OpenBank).\n\nCierra con criterio (lo que valoran): defines un LLM en una frase (modelo Transformer que predice el siguiente token), y dices lo que **NO delegas**: decisiones de arquitectura, revisión final, seguridad; no pegas código propietario en herramientas públicas; revisas siempre el output por posibles alucinaciones de APIs/dependencias."
+    },
+    {
+      "id": "xp-8", "topicId": "xp", "tags": ["frontend", "reactivo"], "difficulty": "easy",
+      "question": "¿Qué experiencia tienes en frontend y con patrones reactivos?",
+      "answer": "**Personalízalo — material real:** aunque tu foco actual es backend, eres **full-stack** real:\n- **Angular** (hasta v15) + **Ionic**, con **NgRx** (patrón **reactivo** basado en store/acciones/efectos) en la app de reservas de parking de Dimática.\n- **React + Redux** (buscador turístico, planificador de jardines, OpenBank), **Next.js** (Voice) y **Vue.js** (proyectos en Auckland).\n\nSobre **reactividad**: en frontend la has aplicado con NgRx/Redux (estado reactivo, unidireccional). En backend, en Agata hay conectores con **WebFlux/Reactor y feign-reactor** y repos reactivos (Mongo/Redis). Sé honesto sobre tu nivel: dominas el **concepto** (no bloqueo, backpressure, push) y lo has tocado, pero la mayor parte de tu backend es imperativo (Spring MVC)."
+    },
+    {
+      "id": "xp-9", "topicId": "xp", "tags": ["contracts", "openapi"], "difficulty": "medium",
+      "question": "¿Has trabajado con contratos de API (OpenAPI/AsyncAPI)?",
+      "answer": "**Personalízalo — material real (Agata):** sí, y de forma **contract-first**:\n- **OpenAPI**: los conectores usan **openapi-generator** (plugin Maven) para generar la **interfaz Java + DTOs** desde el YAML; el REST controller **implementa** esa interfaz → el contrato manda y un breaking change no compila.\n- **AsyncAPI**: los **eventos Kafka** están descritos con AsyncAPI y hay un **validador propio** que comprueba que los mensajes cumplen el contrato; eventos **versionados**.\n- **springdoc** para exponer la documentación.\n\nEsto conecta con tu experiencia previa de contratos/codegen (Oracle Jet, APIs REST). Es un punto fuerte tuyo de cara a esta oferta — sabes por qué el contrato como fuente de verdad evita romper a los consumidores y permite generar clientes."
+    },
+    {
+      "id": "xp-10", "topicId": "xp", "tags": ["anecdota", "star"], "difficulty": "hard",
+      "question": "Cuéntame un reto técnico que hayas resuelto (formato STAR).",
+      "answer": "**Prepara 2-3 historias reales con formato STAR** (Situación · Tarea · Acción · Resultado). Ideas a partir de tu experiencia:\n1. **Hexagonal + contratos (Agata)**: integrar un sistema externo nuevo como conector; cómo aislaste su modelo (adaptador driven + ACL), definiste el contrato OpenAPI/AsyncAPI y mantuviste el dominio puro. Resultado: conector desacoplado y testeable con Testcontainers/WireMock.\n2. **Kafka (IBIL / mercado mayorista)**: un problema de orden o duplicados en eventos; cómo lo resolviste (clave de partición / idempotencia). Resultado medible (menos errores, throughput).\n3. **Migración / PL/SQL (Avanttic)** o **rendimiento de una query**: un caso donde sacaste un plan de ejecución o añadiste un índice y mejoraste tiempos.\n\nClave: una frase por cada letra, **número o resultado concreto** al final, y qué aprendiste. Evita generalidades."
+    },
+    {
+      "id": "xp-11", "topicId": "xp", "tags": ["transacciones", "spring"], "difficulty": "medium",
+      "question": "¿Qué experiencia tienes con transacciones, aspectos y reactividad en Spring?",
+      "answer": "**Personalízalo.** Apóyate en lo que has tocado y refuérzalo con la teoría que ya repasas en la app:\n- **Transacciones**: `@Transactional` en servicios Spring Boot (IBIL, mercado mayorista, Agata); entiendes rollback por unchecked + `rollbackFor`, propagación, el caveat de **self-invocation** (proxy) y alternativas programáticas (`TransactionTemplate`). En Avanttic tocaste transaccionalidad también desde PL/SQL.\n- **Aspectos (AOP)**: para cross-cutting concerns (logging, métricas, seguridad, transacciones); afinar el `@Pointcut` para no penalizar rendimiento.\n- **Reactividad**: NgRx en frontend; en backend conoces WebFlux/Reactor (presente en Agata) y la diferencia async vs reactivo (push + backpressure).\n\nSé honesto sobre profundidad: domina los conceptos (los tienes en las cards de Spring/Async) y ancla cada uno a un proyecto donde lo usaste."
+    },
+    {
+      "id": "xp-12", "topicId": "xp", "tags": ["scrum", "agile", "soft"], "difficulty": "easy",
+      "question": "¿Qué experiencia tienes con Scrum y metodologías ágiles?",
+      "answer": "**Personalízalo — la oferta pide Scrum y mentalidad ágil.** Estructura:\n- Has trabajado en equipos con **Scrum**: sprints, **daily**, planning, refinement, review y retrospectiva; tablero (Jira/similar), historias de usuario y estimación (puntos/planning poker).\n- Mentalidad ágil: entregas incrementales, feedback temprano, colaboración con producto/cliente, adaptarse al cambio sobre seguir un plan rígido.\n- Conecta con calidad: definition of done, code review, CI, tests como parte del incremento (no “después”).\n\nSi tu experiencia ha sido más **Kanban** o un Scrum “ligero”, dilo con naturalidad: lo importante es demostrar que entiendes el **porqué** del marco (iterar, transparencia, mejora continua), no recitar la guía Scrum. Ten un ejemplo concreto de una retro o un cambio de prioridad que gestionasteis bien."
+    }
+  ]
+}
