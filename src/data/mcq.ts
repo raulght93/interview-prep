@@ -1215,6 +1215,171 @@ MCQ.push(
   },
 );
 
+// ===== Tercera tanda: cc (Claude Code) + k8s + extras Spring Cloud / gRPC =====
+
+MCQ.push(
+  // ---- Claude Code ----
+  {
+    id: 'mcq-cc-1', topicId: 'cc',
+    question: '¿En qué se diferencia Claude Code de GitHub Copilot?',
+    options: [
+      'Solo en el modelo subyacente (Claude vs OpenAI).',
+      'Copilot es agentic; Claude Code es solo autocomplete.',
+      'Claude Code es agentic (ejecuta comandos, lee/modifica ficheros, navega web, gestiona git); Copilot es principalmente autocomplete en el editor.',
+      'Son productos equivalentes.',
+    ],
+    correctIndex: 2,
+    explanation: 'Claude Code es **agentic**: hace cosas, no solo sugiere. Loop think→act→observe, herramientas (Bash, Read, Edit, etc.), subagents, hooks, MCP. Copilot/Tabnine son autocomplete dentro del editor.',
+  },
+  {
+    id: 'mcq-cc-2', topicId: 'cc',
+    question: '¿Qué deberías meter en CLAUDE.md de un proyecto?',
+    options: [
+      'El código fuente más importante.',
+      'Las convenciones, decisiones arquitectónicas, comandos comunes y reglas estrictas del equipo.',
+      'La historia de git con los principales commits.',
+      'Credenciales y URLs de los entornos.',
+    ],
+    correctIndex: 1,
+    explanation: 'CLAUDE.md = memoria del proyecto. Mete convenciones, decisiones, comandos, reglas. **NO**: código (lo lee), git history (lo saca con `git log`), secretos.',
+  },
+  {
+    id: 'mcq-cc-3', topicId: 'cc',
+    question: '¿Cuándo es valioso usar plan mode en Claude Code?',
+    options: [
+      'En cualquier tarea, por pequeña que sea.',
+      'Solo cuando vas a editar más de 10 ficheros.',
+      'En cambios grandes/invasivos, refactors transversales o acciones de riesgo alto: planifica antes de tocar, revisas, y solo aplicas si te parece bien.',
+      'Solo si trabajas sin tests.',
+    ],
+    correctIndex: 2,
+    explanation: 'Plan mode separa diseño de ejecución. Útil en refactors grandes, migraciones, infra. En fixes triviales sobra. El plan generado puede ir a una ADR o al PR description.',
+  },
+  {
+    id: 'mcq-cc-4', topicId: 'cc',
+    question: '¿Para qué se usan los subagents?',
+    options: [
+      'Para reemplazar al desarrollador en decisiones de arquitectura.',
+      'Para aislar contexto de investigaciones largas, paralelizar trabajo independiente y especializar prompts/herramientas según el rol.',
+      'Para ahorrar dinero siempre, independientemente de la tarea.',
+      'Para conectarse a APIs externas.',
+    ],
+    correctIndex: 1,
+    explanation: 'Subagents: aislar contexto (la búsqueda no contamina el hilo principal), paralelizar (varias investigaciones), especializar (test-writer, code-reviewer, architect). Para conectar a APIs externas, eso es **MCP**, no subagents.',
+  },
+  {
+    id: 'mcq-cc-5', topicId: 'cc',
+    question: '¿Qué resuelve MCP (Model Context Protocol)?',
+    options: [
+      'La compresión de prompts para reducir tokens.',
+      'Un estándar abierto para que un agente LLM se conecte a fuentes y herramientas externas (Jira, GitHub, BBDD, APIs) con un protocolo común.',
+      'La autenticación entre Claude y la API.',
+      'Un sistema de plugins propietario de Anthropic.',
+    ],
+    correctIndex: 1,
+    explanation: 'MCP es **estándar abierto**: cualquier LLM que lo hable usa el mismo conector. Ya hay SDK oficial. El servidor MCP gestiona auth/secrets, no el prompt. Vs plugins propietarios → MCP es multi-modelo.',
+  },
+  {
+    id: 'mcq-cc-6', topicId: 'cc',
+    question: '¿Qué NO deberías delegar a Claude Code?',
+    options: [
+      'Generar tests JUnit a partir de una clase.',
+      'Refactorizar nombres en varios ficheros con tests verdes.',
+      'Decisiones críticas de seguridad (auth, criptografía) sin verificar a mano y a fondo, y decisiones de arquitectura sin discusión.',
+      'Buscar APIs en una librería desconocida.',
+    ],
+    correctIndex: 2,
+    explanation: 'Las alucinaciones en seguridad son catastróficas; las decisiones de arquitectura no las firma una IA. Lo demás es legítimo siempre que **revises** el output.',
+  },
+  // ---- Kubernetes ----
+  {
+    id: 'mcq-k8s-1', topicId: 'k8s',
+    question: '¿Cuándo usarías un StatefulSet en vez de un Deployment?',
+    options: [
+      'Siempre, porque es más nuevo.',
+      'Cuando los pods son intercambiables y stateless.',
+      'Cuando los pods necesitan identidad estable, orden de arranque y/o almacenamiento per-pod (BBDD, Kafka brokers, Keycloak HA, Mongo ReplicaSet).',
+      'Cuando quieres uno por nodo.',
+    ],
+    correctIndex: 2,
+    explanation: 'StatefulSet = identidad estable (`app-0`, `app-1`), orden, PVC por pod. Para BBDD, Kafka, sistemas con estado. Deployment = pods stateless intercambiables. DaemonSet = uno por nodo (DaemonSets, no StatefulSets).',
+  },
+  {
+    id: 'mcq-k8s-2', topicId: 'k8s',
+    question: '¿Por qué usar Ingress en vez de un LoadBalancer por servicio?',
+    options: [
+      'Ingress es más rápido que LoadBalancer.',
+      'Ingress se sirve gratis en cualquier clúster sin extras.',
+      'Una sola IP/LoadBalancer expone N servicios HTTP por host/path; termina TLS en un solo punto; reglas avanzadas (rate limit, rewrite, headers). Un LoadBalancer por servicio escala y cuesta mucho peor.',
+      'LoadBalancer no soporta TLS.',
+    ],
+    correctIndex: 2,
+    explanation: 'Ingress es la capa HTTP de entrada con reglas por host/path sobre Services internos. Una IP, muchos servicios públicos. LoadBalancer por servicio se vuelve caro e inmanejable con 10+ servicios. Para TCP no-HTTP sigue siendo LoadBalancer.',
+  },
+  {
+    id: 'mcq-k8s-3', topicId: 'k8s',
+    question: 'Sobre Network Policies en Kubernetes, ¿qué es cierto?',
+    options: [
+      'Por defecto los pods están aislados entre sí.',
+      'Por defecto los pods se ven entre todos; las Network Policies introducen segmentación L3/L4 y requieren un CNI que las soporte (Calico, Cilium).',
+      'Sustituyen a un firewall externo.',
+      'Solo funcionan en Kubernetes managed (GKE/EKS).',
+    ],
+    correctIndex: 1,
+    explanation: 'K8s por defecto = red plana. NetworkPolicies = firewall por etiquetas/namespaces, modelo zero-trust si arrancas con `default-deny-all`. Requieren CNI compatible (Flannel básico no las soporta).',
+  },
+  {
+    id: 'mcq-k8s-4', topicId: 'k8s',
+    question: '¿Qué es un Operator en Kubernetes (Strimzi, CNPG)?',
+    options: [
+      'Un proxy delante de la API de K8s.',
+      'Un Pod que ejecuta comandos administrativos manualmente.',
+      'Un controller custom que reconcilia recursos custom (CRDs) — codifica el know-how de operar un sistema complejo (Kafka, Postgres HA, cert-manager).',
+      'Una versión enterprise de Kubernetes.',
+    ],
+    correctIndex: 2,
+    explanation: 'Un Operator + CRDs amplía K8s con tus propios tipos (`KafkaCluster`, `PostgresCluster`). Tú declaras un YAML y el operator se encarga de los StatefulSets/Services/Secrets necesarios. Strimzi opera Kafka; CNPG opera Postgres HA.',
+  },
+  // ---- Spring Cloud / arch ----
+  {
+    id: 'mcq-arch-9', topicId: 'arch',
+    question: 'Spring Cloud Gateway está construido sobre…',
+    options: [
+      'Spring MVC (servlet, bloqueante).',
+      'Spring WebFlux (reactivo, no bloqueante).',
+      'Tomcat puro.',
+      'Apache Camel.',
+    ],
+    correctIndex: 1,
+    explanation: 'Spring Cloud Gateway es WebFlux (reactivo). Es el reemplazo moderno de Zuul 1 (bloqueante). Define routes con predicates + filters en YAML o programáticamente.',
+  },
+  // ---- gRPC ----
+  {
+    id: 'mcq-rest-6', topicId: 'rest',
+    question: '¿Cuándo elegirías gRPC sobre REST?',
+    options: [
+      'Para una API pública consumida desde navegadores y `curl`.',
+      'Para comunicación de alta frecuencia / baja latencia entre microservicios internos, con tipado fuerte y streaming nativo.',
+      'Cuando necesitas cache HTTP estándar.',
+      'Cuando el equipo no quiere mantener un .proto.',
+    ],
+    correctIndex: 1,
+    explanation: 'gRPC brilla **entre microservicios internos**: binario (HTTP/2 + Protobuf), cliente generado type-safe, streaming bidireccional. Mal para navegadores (gRPC-Web requiere proxy) y cache HTTP estándar. Patrón común: REST hacia fuera, gRPC dentro.',
+  },
+  {
+    id: 'mcq-msg-7', topicId: 'msg',
+    question: 'Debezium hace CDC leyendo…',
+    options: [
+      'La salida de los logs de la aplicación.',
+      'El binlog de MySQL / WAL de Postgres / oplog de Mongo, y publica los cambios a Kafka.',
+      'Únicamente eventos publicados manualmente por la app.',
+      'Snapshots periódicos completos de las tablas.',
+    ],
+    correctIndex: 1,
+    explanation: 'Debezium = CDC sobre los logs internos de la BD (WAL/binlog/oplog). Publica eventos `before/after` a Kafka. Resuelve outbox sin polling y sincronización entre sistemas con baja latencia.',
+  },
+);
+
 export function mcqByTopic(topicId: string): McqQuestion[] {
   return MCQ.filter((q) => q.topicId === topicId);
 }

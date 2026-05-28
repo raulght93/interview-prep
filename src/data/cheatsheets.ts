@@ -178,6 +178,33 @@ export const CHEATSHEETS: CheatSheet[] = [
     ],
   },
   {
+    topicId: 'cc',
+    points: [
+      'Agentic (ejecuta) > autocomplete. Loop think→act→observe.',
+      'CLAUDE.md: memoria del proyecto. Reglas/convenciones/comandos. NO código, NO secrets, NO git history.',
+      'Subagents: aislan contexto, paralelizan, especializan (test-writer, architect). Custom en .claude/agents/.',
+      'Plan mode para cambios grandes; aprobación humana antes de aplicar.',
+      'Hooks: scripts en eventos (PreToolUse/PostToolUse/Stop). Auto-format, validación, logging.',
+      'MCP = estándar abierto para integrar fuentes externas (Jira, GitHub, BBDD). Auth en el server, no en el prompt.',
+      'settings.json: modos de permiso + allow/deny granular. Versiona el del proyecto.',
+      'NO delegues: arquitectura, revisión final, seguridad, código propietario en chats públicos.',
+      'Coste: elige modelo (Opus/Sonnet/Haiku). Cache de prompts. Subagents para no llenar contexto.',
+      'Verifica siempre: tests + build verde + lee el diff. La IA puede alucinar APIs.',
+    ],
+  },
+  {
+    topicId: 'k8s',
+    points: [
+      'Pod = unidad mínima. Deployment (stateless) vs StatefulSet (identidad estable, PVC propio) vs DaemonSet (1 por nodo).',
+      'Service tipos: ClusterIP (interno), NodePort (debug), LoadBalancer (1 IP externa), Headless (DNS a pods).',
+      'Ingress > N LoadBalancers: 1 IP + reglas por host/path + TLS. Necesita Ingress Controller (nginx/Traefik).',
+      'Probes: liveness (reinicia), readiness (saca del Service), startup (arranque lento). No confundir.',
+      'NetworkPolicy: segmentación L3/L4 entre pods. Necesita CNI compatible (Calico, Cilium). Patrón default-deny.',
+      'Operators + CRDs = código vivo: Strimzi (Kafka), CNPG (Postgres HA), cert-manager (TLS).',
+      'Requests = reserva (scheduling). Limits = máximo (throttling/OOMKilled). QoS: Guaranteed > Burstable > BestEffort.',
+    ],
+  },
+  {
     topicId: 'obs',
     points: [
       '3 pilares: métricas (agregadas), logs (texto/JSON), traces (recorrido de petición).',
