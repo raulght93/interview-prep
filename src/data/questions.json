@@ -212,7 +212,7 @@
       ],
       "difficulty": "easy",
       "question": "Después de aplicar un map o flatMap, ¿aplicarías un collect? ¿Para qué sirve collect?",
-      "answer": "Sí, **si quieres materializar el resultado** en una colección. `collect` es una operación **terminal** que reduce el stream a un resultado usando un `Collector`. Ejemplos: `Collectors.toList()`, `toSet()`, `toMap()`, `groupingBy()`, `joining()`, `counting()`. Sin una operación terminal el stream **no se ejecuta** (lazy)."
+      "answer": "Sí, **si quieres materializar el resultado** en una colección. `collect` es una operación **terminal** que consume el stream y lo convierte en una estructura.\n\n```java\n// Lazy (no ejecutan hasta el terminal):\nempleados.stream()\n    .filter(Empleado::isActivo)       // intermedia\n    .map(Empleado::getNombre)         // intermedia\n    .sorted()                         // intermedia\n    .collect(Collectors.toList());    // TERMINAL — dispara todo\n\n// Otras terminales\nlong n    = stream.count();\nboolean b = stream.anyMatch(pred);\nOptional<T> o = stream.findFirst();\nstream.forEach(System.out::println);\n```\n\n**Regla**: una operación intermedia devuelve `Stream<T>`; una terminal devuelve otra cosa (o `void`). Sin terminal, el pipeline nunca ejecuta.\n\n**En Agata Next**: `repository.findAll().stream().filter(...).collect(Collectors.toUnmodifiableList())` en puertos de salida del dominio."
     },
     {
       "id": "java-3",
@@ -223,7 +223,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Qué te da una interfaz funcional que no te da una interfaz normal?",
-      "answer": "Una **interfaz funcional** tiene **exactamente un método abstracto** (puede tener defaults y statics). Permite usar **lambdas** y **referencias a métodos** donde se espera esa interfaz: `Function<T,R>`, `Predicate<T>`, `Consumer<T>`, `Supplier<T>`, `Runnable`, `Comparator<T>`. Se marca opcionalmente con `@FunctionalInterface` (el compilador valida). Sin esa propiedad no puedes pasarle un lambda."
+      "answer": "Una **interfaz funcional** tiene **exactamente un método abstracto** (SAM — Single Abstract Method). Puede tener métodos `default`/`static`.\n\n```java\n@FunctionalInterface\ninterface Transformador<T, R> {\n    R transforma(T entrada);   // el único abstracto\n    default void log() { ... } // permitido\n}\n\n// Uso con lambda (en vez de clase anónima):\nTransformador<String, Integer> longitud = s -> s.length();\n\n// Funcionales del JDK\nFunction<T, R>   f = t -> ...;  // T → R\nPredicate<T>     p = t -> ...;  // T → boolean\nConsumer<T>      c = t -> ...;  // T → void\nSupplier<T>      s = () -> ...; // () → T\n```\n\n**En Agata Next**: se usan `Function<DomainEvent, Mono<Void>>` como handlers en los puertos de entrada reactivos de los conectores."
     },
     {
       "id": "java-4",
@@ -233,7 +233,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Qué es una interfaz? ¿Se extiende o se implementa?",
-      "answer": "Una **interfaz** es un contrato: define qué métodos debe ofrecer una clase, sin estado. Una clase la **implementa** (`implements`). Una interfaz **extiende** otra interfaz (`extends`, incluso múltiples). En Java moderno puede tener métodos `default`, `static`, `private` y constantes."
+      "answer": "```\n┌──────────────────────────────┬──────────────────────────────┐\n│      Interface               │    Clase abstracta           │\n├──────────────────────────────┼──────────────────────────────┤\n│ Contrato puro (qué)          │ Implementación parcial (cómo)│\n│ Herencia múltiple OK         │ Solo una superclase          │\n│ Todo public por defecto      │ Puede tener protected/pkg    │\n│ No tiene estado de instancia │ Puede tener campos           │\n│ default/static methods OK    │ Métodos concretos + abstractos│\n└──────────────────────────────┴──────────────────────────────┘\n```\n\n**Regla**: usa **interface** para el puerto del dominio (`UserRepository`); usa **clase abstracta** cuando varias implementaciones comparten código base (plantilla).\n\n```java\n// Puerto del dominio (hexagonal) — siempre interface\ninterface ConectorRepository {\n    Conector findById(ConectorId id);\n}\n\n// Adaptador con lógica compartida — clase abstracta\nabstract class BaseMongoAdapter {\n    protected final MongoTemplate mongo;\n    protected BaseMongoAdapter(MongoTemplate t) { this.mongo = t; }\n}\n```"
     },
     {
       "id": "java-5",
@@ -254,7 +254,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Se puede instanciar directamente una clase abstracta?",
-      "answer": "**No**. Sólo se puede instanciar una subclase concreta. Puedes hacer `new ClaseAbstracta() { ... }` (clase anónima) sobrescribiendo los métodos abstractos, pero eso ya es crear una subclase implícita."
+      "answer": "**No**. Una clase abstracta **no se puede instanciar directamente**. Solo puedes instanciar una subclase concreta que implemente todos sus métodos abstractos.\n\n```java\nabstract class Animal {\n    abstract String sonido();\n    void respirar() { System.out.println(\"inhala...\"); }\n}\n\n// ERROR en compilación:\n// Animal a = new Animal();  ← no compila\n\n// CORRECTO — subclase concreta:\nclass Perro extends Animal {\n    @Override String sonido() { return \"guau\"; }\n}\nAnimal a = new Perro();   // polimorfismo: referencia abstracta, objeto concreto\n```\n\n**Excepción aparente**: clases anónimas — `new Animal() { String sonido() { return \"miau\"; } }` — en realidad crean una subclase anónima, no instancian `Animal`.\n\n**En Agata Next**: la `AbstractConnectorService` centraliza retry + tracing; los conectores la extienden e implementan el método abstracto `process(Event)`."
     },
     {
       "id": "spring-1",
@@ -264,7 +264,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Para qué sirve un ViewResolver?",
-      "answer": "En Spring MVC, un **`ViewResolver`** traduce el **nombre lógico de vista** que devuelve un `@Controller` (por ejemplo `\"home\"`) a un objeto `View` concreto que renderiza (JSP, Thymeleaf, FreeMarker...). Lo común: `InternalResourceViewResolver` con prefix `/WEB-INF/views/` y suffix `.jsp`. En APIs REST con `@RestController` **no se usa** porque el contenido se serializa directamente (JSON/XML)."
+      "answer": "En Spring MVC, un **`ViewResolver`** traduce el **nombre lógico de vista** que devuelve un `@Controller` en la **vista real** (HTML, Thymeleaf, JSP…).\n\n```\nPetición HTTP\n     │\n     ▼\nDispatcherServlet\n     │ llama al\n     ▼\n@Controller.metodo()  →  return \"formulario\"  (nombre lógico)\n     │\n     ▼\nViewResolver           →  /templates/formulario.html  (archivo real)\n     │\n     ▼\nView.render()         →  HTML al cliente\n```\n\n```java\n// application.properties — configura Thymeleaf ViewResolver:\nspring.thymeleaf.prefix=classpath:/templates/\nspring.thymeleaf.suffix=.html\n\n// El controller solo devuelve el nombre lógico:\n@Controller\npublic class FormController {\n    @GetMapping(\"/form\")\n    public String show(Model model) {\n        model.addAttribute(\"datos\", service.getDatos());\n        return \"formulario\";  // resuelve a /templates/formulario.html\n    }\n}\n```\n\n**Nota**: en APIs `@RestController` el `ViewResolver` no entra en juego porque `@ResponseBody` serializa directo a JSON/XML."
     },
     {
       "id": "spring-2",
@@ -274,7 +274,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Qué diferencia hay entre un @Controller y un @RestController? ¿Cuándo usar cada uno?",
-      "answer": "**`@RestController` = `@Controller` + `@ResponseBody`** aplicado a todos los métodos. Es decir, sus retornos se serializan al body de la respuesta (JSON normalmente) en lugar de resolverse como nombre de vista.\n\n- `@Controller` → app web tradicional con vistas (Thymeleaf, JSP).\n- `@RestController` → API REST que devuelve JSON/XML."
+      "answer": "**`@RestController` = `@Controller` + `@ResponseBody`** en todos los métodos. Diferencia clave: el valor de retorno va directo al body HTTP (Jackson lo serializa), sin pasar por ningún `ViewResolver`.\n\n```java\n// @Controller — devuelve nombre de vista (o void con @ResponseBody explícito)\n@Controller\npublic class WebController {\n    @GetMapping(\"/pagina\")\n    public String pagina(Model m) { return \"pagina\"; }  // Thymeleaf\n\n    @GetMapping(\"/api/datos\")\n    @ResponseBody                        // ← necesario para JSON\n    public DatosDto datos() { return new DatosDto(); }\n}\n\n// @RestController — todo es JSON por defecto\n@RestController\n@RequestMapping(\"/api\")\npublic class ApiController {\n    @GetMapping(\"/datos\")\n    public DatosDto datos() { return new DatosDto(); }  // JSON automático\n}\n```\n\n**Regla práctica**: usa `@RestController` para APIs; `@Controller` para apps con vistas Thymeleaf/JSP. En Agata Next todos los endpoints de los conectores son `@RestController`."
     },
     {
       "id": "spring-3",
@@ -285,7 +285,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Se puede definir un GET, PATCH, POST o PUT en un @Controller?",
-      "answer": "**Sí**. `@Controller` admite los mismos verbos (`@GetMapping`, `@PostMapping`, etc.) que `@RestController`. La diferencia está en cómo se interpreta el retorno (vista vs body). Puedes incluso poner `@ResponseBody` en métodos concretos de un `@Controller` y se comportan como REST."
+      "answer": "**Sí**. Añadiendo `@ResponseBody` al método (o a la clase) le dices a Spring que el valor de retorno debe ir directo al body HTTP, no a un `ViewResolver`.\n\n```java\n@Controller  // no @RestController\npublic class MixtoController {\n\n    @GetMapping(\"/vista\")\n    public String vista(Model m) {\n        return \"mi-plantilla\";         // Thymeleaf — sin @ResponseBody\n    }\n\n    @GetMapping(\"/api/datos\")\n    @ResponseBody                      // ← activa serialización JSON\n    public Map<String, Object> datos() {\n        return Map.of(\"ok\", true);\n    }\n}\n```\n\n**En la práctica**: si un controlador devuelve solo JSON, usa directamente `@RestController`. La combinación `@Controller + @ResponseBody` es útil cuando la misma clase sirve tanto vistas HTML como endpoints JSON (raro pero válido)."
     },
     {
       "id": "spring-4",
@@ -316,7 +316,7 @@
       ],
       "difficulty": "medium",
       "question": "Si te doy 4 o 5 requisitos, ¿qué haces para plantear la solución?",
-      "answer": "1. **Entender el dominio**: lenguaje ubicuo, actores, casos de uso. 2. Identificar **capacidades de negocio** y posibles **bounded contexts**. 3. Definir las **entidades de dominio** y agregados (consistencia). 4. Elegir **estilo de integración** (sync REST vs async eventos según acoplo y latencia). 5. Definir **contratos** (OpenAPI/AsyncAPI). 6. Pensar **persistencia** por contexto. 7. **NFRs**: consistencia, latencia, throughput, observabilidad. 8. Dibujar capas (hexagonal): dominio → casos de uso → adapters. 9. Iterar y validar con el equipo de producto."
+      "answer": "```\n1. Dominio puro\n   ┌─────────────────────────────────────┐\n   │  Entidades + Value Objects          │\n   │  Agregados (raíz de consistencia)   │\n   │  Puertos: interfaces sin framework  │\n   └─────────────────────────────────────┘\n          ↑ depende de          ↓ implementan\n2. Aplicación (casos de uso)    Adaptadores\n   ┌──────────────────┐      ┌─────────────────┐\n   │  Services/       │      │  IN:  REST, Kafka│\n   │  CommandHandlers │      │  OUT: MongoDB,   │\n   │  Orquestan el    │      │       PostgreSQL  │\n   │  dominio         │      │       Valkey      │\n   └──────────────────┘      └─────────────────┘\n```\n\nPasos concretos:\n1. **Lenguaje ubicuo** — glosario con el negocio (¿qué es un \"Conector\"?).\n2. **Identificar agregados** — unidades de consistencia transaccional.\n3. **Definir puertos** — interfaces de entrada (use cases) y salida (repos, mensajería).\n4. **Implementar dominio** — entidades + lógica de negocio pura, sin Spring.\n5. **Implementar adaptadores** — REST controllers, Kafka listeners, repositorios Mongo.\n6. **Cablear en config** — Spring DI conecta puertos ↔ adaptadores.\n\n**En Agata Next**: cada microservicio-conector sigue esta estructura en paquetes `domain/`, `application/`, `infrastructure/`."
     },
     {
       "id": "arch-2",
@@ -358,7 +358,7 @@
       ],
       "difficulty": "medium",
       "question": "¿En qué capa meterías un REST controller en arquitectura hexagonal? ¿Y un OpenAPI?",
-      "answer": "El **REST controller** es un **adapter de entrada** (driving adapter), en la capa de **infraestructura/adapters**. Llama a un **puerto de entrada** (use case / application service) que vive en la capa de aplicación. El dominio no sabe nada de HTTP.\n\nEl **OpenAPI** es el **contrato del borde**, en la capa de infraestructura/adapters. Patrón habitual: generar la **interfaz Java** desde el YAML con `openapi-generator`; el controller la **implementa**. Así el contrato manda y el código se adapta."
+      "answer": "El **REST controller** es un **adaptador de entrada** (driving/primary adapter) en la capa de infraestructura. Traduce HTTP → llamada al puerto de entrada del dominio.\n\n```\nHTTP Request\n     │\n     ▼\n┌─────────────────────────────┐  ← infraestructura\n│  @RestController            │\n│  - Deserializa JSON → DTO   │\n│  - Valida (@Valid)          │\n│  - Llama al puerto de entrada│\n│  - Serializa resultado → JSON│\n└─────────────────────────────┘\n     │  llama\n     ▼\n┌─────────────────────────────┐  ← aplicación (puerto)\n│  ConectorUseCase (interface)│\n│  + ConectorService (impl)   │\n└─────────────────────────────┘\n     │  usa\n     ▼\n┌─────────────────────────────┐  ← dominio\n│  Conector (entidad)         │\n│  ConectorRepository (puerto)│\n└─────────────────────────────┘\n```\n\n**El controller NO contiene lógica de negocio**. Si ves una regla de negocio en el controller, muévela al servicio de aplicación o al dominio."
     },
     {
       "id": "rest-1",
@@ -368,7 +368,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Cuál es el Content-Type de una petición/respuesta REST cuando devuelves un 200? ¿Qué tipo de contenido puede devolver?",
-      "answer": "**No hay uno fijo**: depende de lo que devuelvas. Lo más habitual en APIs REST: **`application/json`**. Pero un servicio REST puede devolver cualquier tipo: `application/xml`, `text/plain`, `text/html`, `application/pdf`, `image/png`, `application/octet-stream`, `multipart/form-data` (raro como respuesta), etc. El Content-Type **describe el media type del body**."
+      "answer": "**No hay uno fijo**: depende de lo que devuelvas. Convención REST estándar:\n\n```\n┌─────────────────┬───────┬─────────────────────────────┐\n│ Operación       │Código │ Cuándo                      │\n├─────────────────┼───────┼─────────────────────────────┤\n│ GET  (lectura)  │  200  │ recurso encontrado          │\n│ POST (creación) │  201  │ + Location header al nuevo  │\n│ PUT/PATCH       │  200  │ actualización con body resp │\n│ DELETE          │  204  │ sin body                    │\n│ POST (acción)   │  200  │ operación sin recurso nuevo │\n└─────────────────┴───────┴─────────────────────────────┘\n```\n\n```java\n// Spring — forzar código explícito:\n@PostMapping(\"/conectores\")\n@ResponseStatus(HttpStatus.CREATED)          // 201\npublic ConectorDto crear(@RequestBody Cmd c) { ... }\n\n@DeleteMapping(\"/{id}\")\n@ResponseStatus(HttpStatus.NO_CONTENT)       // 204\npublic void eliminar(@PathVariable String id) { ... }\n```\n\n**Error frecuente**: devolver 200 en un POST de creación. El 201 con el `Location` header es lo que esperan los clientes REST bien escritos."
     },
     {
       "id": "rest-2",
@@ -378,7 +378,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Dónde se define el Content-Type?",
-      "answer": "En el **header HTTP `Content-Type`** de la petición o respuesta. En Spring: anotaciones `consumes` (qué acepta el endpoint) y `produces` (qué devuelve) en `@RequestMapping`/`@GetMapping`/etc. También se puede negociar con el header `Accept` del cliente (content negotiation)."
+      "answer": "En el **header HTTP `Content-Type`** de la petición o respuesta. Indica el **formato del body**.\n\n```\nPOST /api/conectores HTTP/1.1\nContent-Type: application/json          ← qué envío\nAccept: application/json                ← qué espero recibir\n\n{ \"nombre\": \"kafka-producer\", \"tipo\": \"KAFKA\" }\n```\n\n```java\n// En Spring — forzar content-type de respuesta:\n@GetMapping(value = \"/report\", produces = MediaType.APPLICATION_XML_VALUE)\npublic ReportDto report() { ... }\n\n// Restringir qué acepta el endpoint:\n@PostMapping(value = \"/datos\",\n             consumes = MediaType.APPLICATION_JSON_VALUE)\npublic void procesar(@RequestBody DatosDto d) { ... }\n```\n\n**Headers relacionados**:\n- `Content-Type`: describe el body que **envío**\n- `Accept`: describe el formato que **quiero recibir**\n- `Content-Encoding`: compresión (gzip, br) — distinto a Content-Type"
     },
     {
       "id": "rest-3",
@@ -428,7 +428,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Qué diferencia hay entre un PUT y un PATCH?",
-      "answer": "- **PUT**: **reemplazo total** del recurso. Es **idempotente** (mismas llamadas → mismo resultado). Si omites un campo, lo borras.\n- **PATCH**: **modificación parcial**. No es necesariamente idempotente (depende de la operación: `replace` sí, `add` a una lista no). Formatos comunes: JSON Merge Patch (RFC 7396) o JSON Patch (RFC 6902)."
+      "answer": "- **PUT**: **reemplazo total** del recurso. Es **idempotente** (mismas llamadas → mismo resultado). Si omites un campo, se borra.\n- **PATCH**: **modificación parcial**. Solo mandas los campos que cambian.\n\n```\nPUT  /usuarios/42        → body completo del usuario (sobreescribe todo)\nPATCH /usuarios/42       → body parcial { \"email\": \"nuevo@mail.com\" }\n```\n\n```java\n// PUT — reemplaza todo\n@PutMapping(\"/{id}\")\npublic ConectorDto reemplazar(@PathVariable String id,\n                               @RequestBody ConectorDto completo) {\n    return service.reemplazar(id, completo);  // sobrescribe todos los campos\n}\n\n// PATCH — actualiza parcialmente (usa Map o clase con campos nullable)\n@PatchMapping(\"/{id}\")\npublic ConectorDto actualizar(@PathVariable String id,\n                               @RequestBody Map<String, Object> cambios) {\n    return service.aplicarCambios(id, cambios);\n}\n```\n\n**Regla práctica**: en Agata Next los conectores usan PATCH para actualizar configuración sin forzar al cliente a mandar todo el objeto."
     },
     {
       "id": "sec-1",
@@ -479,7 +479,7 @@
       ],
       "difficulty": "hard",
       "question": "¿Cómo puedes forzar un error de CORS desde una web no autorizada?",
-      "answer": "Si te abres una página en el navegador (`https://otra-web.com`) y desde su JS haces `fetch('https://tu-api.com/...')`, el navegador hará la comprobación de CORS. Si tu API no incluye ese origen en `Access-Control-Allow-Origin`, el navegador **bloqueará la respuesta** y el JS verá un error CORS.\n\nPara provocarlo: una página HTML simple con un `fetch` o XHR a tu API desde un dominio que tu config no autoriza. Para requests no-simples (PUT, headers custom, JSON con Content-Type), el navegador hace **preflight OPTIONS** antes; si no responde con los allow headers correctos, ya falla ahí sin enviar la petición real."
+      "answer": "Si abres `https://app.agata.io` y su JS hace `fetch(\"https://api.agata.io/datos\")`, el **navegador** detecta origen cruzado (dominio distinto) y añade cabeceras CORS a la petición.\n\n```\nBrowser (app.agata.io)          Servidor (api.agata.io)\n        │                               │\n        │  OPTIONS /datos               │  ← preflight (si método no simple)\n        │  Origin: https://app.agata.io │\n        │──────────────────────────────►│\n        │                               │\n        │  200 OK                       │\n        │  Access-Control-Allow-Origin: https://app.agata.io\n        │  Access-Control-Allow-Methods: GET, POST\n        │◄──────────────────────────────│\n        │                               │\n        │  GET /datos (petición real)   │\n        │──────────────────────────────►│\n        │  200 OK + datos               │\n        │◄──────────────────────────────│\n```\n\n```java\n// Spring — habilitar CORS por controlador:\n@CrossOrigin(origins = \"https://app.agata.io\")\n@RestController public class DatosController { ... }\n\n// O globalmente:\n@Bean\npublic WebMvcConfigurer cors() {\n    return new WebMvcConfigurer() {\n        @Override\n        public void addCorsMappings(CorsRegistry r) {\n            r.addMapping(\"/api/**\").allowedOrigins(\"https://app.agata.io\");\n        }\n    };\n}\n```"
     },
     {
       "id": "cors-3",
@@ -511,7 +511,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Cuándo devuelve una API un 404? ¿Y un 500? ¿Un 500 es culpa del cliente o del servidor?",
-      "answer": "- **404 Not Found**: el recurso pedido no existe (ruta no mapeada o id inexistente).\n- **500 Internal Server Error**: error genérico **del servidor**. Algo se rompió en el backend (excepción no controlada, fallo de dependencia, NPE...). **Culpa del servidor**, no del cliente. La familia 5xx siempre es del servidor; la 4xx es del cliente."
+      "answer": "- **`404 Not Found`**: el recurso pedido **no existe** (ruta no mapeada, ID inexistente).\n- **`403 Forbidden`**: el recurso **existe** pero el usuario autenticado **no tiene permiso** para acceder.\n- **`401 Unauthorized`**: no hay credenciales válidas (no autenticado); debería llamarse \"Unauthenticated\".\n\n```\nGET /conectores/99                  → 404  (no existe ese conector)\nGET /conectores/42 (sin token)      → 401  (no autenticado)\nGET /conectores/42 (token sin rol)  → 403  (autenticado pero sin permiso)\n```\n\n```java\n// Spring Security — excepciones que mapean a cada código:\nthrow new ResponseStatusException(HttpStatus.NOT_FOUND, \"Conector no encontrado\");\n// Spring Security lanza 401/403 automáticamente según AuthenticationException/AccessDeniedException\n```\n\n**Truco de seguridad**: a veces se devuelve **404** en vez de 403 para no revelar que el recurso existe (evitar enumeración). En Agata Next los endpoints de configuración devuelven 404 a usuarios sin rol ADMIN aunque el conector exista."
     },
     {
       "id": "async-1",
@@ -532,7 +532,7 @@
       ],
       "difficulty": "medium",
       "question": "Si no quieres ejecutarlo después mediante un scheduler sino ahora, ¿qué usarías?",
-      "answer": "Opciones \"ahora pero asíncrono\":\n- **`@Async`** en Spring (con `@EnableAsync` y un `Executor` configurado).\n- **`CompletableFuture.supplyAsync(...)`** con un `ExecutorService` propio.\n- En Java 21, **virtual threads** (`Executors.newVirtualThreadPerTaskExecutor()`) si son tareas con I/O.\n- **Project Reactor** si trabajas reactivo (`Mono.fromCallable(...).subscribeOn(Schedulers.boundedElastic())`).\n- **Encolar un mensaje** y un consumer lo procesa inmediatamente (cola interna en memoria o broker)."
+      "answer": "Opciones para ejecutar trabajo asíncrono sin bloquear el hilo del caller:\n\n```java\n// 1. @Async — Spring gestiona el pool\n@Service\npublic class NotificationService {\n    @Async(\"taskExecutor\")            // pool nombrado (recomendado)\n    public CompletableFuture<Void> enviar(Evento e) {\n        mailer.send(e);\n        return CompletableFuture.completedFuture(null);\n    }\n}\n\n@Configuration @EnableAsync\npublic class AsyncConfig {\n    @Bean(\"taskExecutor\")\n    public Executor taskExecutor() {\n        ThreadPoolTaskExecutor exec = new ThreadPoolTaskExecutor();\n        exec.setCorePoolSize(4);\n        exec.setMaxPoolSize(20);\n        exec.setQueueCapacity(500);\n        return exec;\n    }\n}\n\n// 2. CompletableFuture manual\nCompletableFuture.supplyAsync(() -> service.proceso(), executor)\n                 .thenAccept(result -> log.info(\"Listo: {}\", result));\n\n// 3. Kafka — desacoplamiento total (el procesamiento ocurre en otro servicio/hilo)\nkafkaTemplate.send(\"eventos\", evento);   // fire-and-forget\n```\n\n**Trampa de @Async**: solo funciona si el método se llama **desde fuera del bean** (Spring intercepta vía proxy). Si llamas `this.enviar()` dentro de la misma clase, el `@Async` no aplica."
     },
     {
       "id": "async-3",
@@ -623,7 +623,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Qué es la tercera forma normal?",
-      "answer": "**3FN**: la tabla está en 2FN y **no hay dependencias transitivas** entre atributos no clave. Es decir, todo atributo no clave depende **directamente** de la clave primaria, no de otro atributo no clave.\n\nEjemplo de violación: tabla `empleado(id, nombre, departamento_id, departamento_nombre)`. `departamento_nombre` depende de `departamento_id`, no del `id` del empleado. Solución: sacar departamento a su propia tabla. Recordatorio: 1FN = valores atómicos; 2FN = 1FN + no dependencias parciales de claves compuestas; 3FN = 2FN + no transitivas."
+      "answer": "**3FN**: la tabla está en 2FN y **no hay dependencias transitivas** — ningún atributo no-clave depende de otro atributo no-clave.\n\n```\nTabla NO en 3FN (dependencia transitiva):\n┌────────────┬─────────────┬─────────────┬──────────────┐\n│ pedido_id  │ cliente_id  │ cliente_nom │ cliente_pais │\n├────────────┼─────────────┼─────────────┼──────────────┤\n│     1      │     42      │  \"Acme\"     │  \"España\"    │\n│     2      │     42      │  \"Acme\"     │  \"España\"    │  ← duplicado\n└────────────┴─────────────┴─────────────┴──────────────┘\n  PK: pedido_id\n  Problema: cliente_nom y cliente_pais dependen de cliente_id, no de pedido_id\n\nDescomposición en 3FN:\nPedidos: (pedido_id PK, cliente_id FK)\nClientes: (cliente_id PK, cliente_nom, cliente_pais)\n```\n\n**Propósito**: eliminar redundancia y anomalías de actualización (cambiar el nombre de \"Acme\" requeriría actualizar múltiples filas). La 3FN es el estándar mínimo para OLTP. OLAP/data warehouses a veces usan esquemas desnormalizados intencionalmente para rendimiento."
     },
     {
       "id": "db-4",
@@ -664,7 +664,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Cuántos registros devuelve un INNER JOIN entre dos tablas si solo hay 3 coincidencias? ¿Qué hace un INNER JOIN?",
-      "answer": "**3 filas** (asumiendo 1:1 en los matches; si un id de A coincide con 2 de B serían más).\n\nUn **INNER JOIN** devuelve **sólo las filas con coincidencia** en ambas tablas según la condición `ON`. Sin matches → fila excluida. Es la intersección. A diferencia del LEFT/RIGHT, no añade NULLs por filas no coincidentes."
+      "answer": "**3 filas** si cada id de la tabla A coincide con exactamente 1 fila de B. Si hay coincidencias múltiples, se multiplica.\n\n```\nTabla A          Tabla B           INNER JOIN (A.id = B.id)\n┌────┬──────┐   ┌────┬──────┐     ┌────┬───────┬────┬──────┐\n│ id │ nom  │   │ id │ val  │     │a.id│ a.nom │b.id│ b.val│\n├────┼──────┤   ├────┼──────┤  →  ├────┼───────┼────┼──────┤\n│  1 │ Ana  │   │  1 │  100 │     │  1 │ Ana   │  1 │  100 │\n│  2 │ Bea  │   │  2 │  200 │     │  2 │ Bea   │  2 │  200 │\n│  3 │ Cal  │   │  3 │  300 │     │  3 │ Cal   │  3 │  300 │\n│  4 │ Dan  │   └────┴──────┘     └────┴───────┴────┴──────┘\n└────┴──────┘   (solo 3 filas)        ↑ Dan (id=4) NO aparece — sin match\n```\n\n**Resultado**: 3 filas (solo las filas con coincidencia en ambas tablas).\n\n**Variante**: si B tuviera 2 filas con id=1 → el JOIN devolvería 4 filas (producto cartesiano de los matches). INNER JOIN no garantiza cardinalidad; depende de los datos."
     },
     {
       "id": "sql-3",
@@ -737,7 +737,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Qué es un record y por qué ayuda con la inmutabilidad y el thread safety?",
-      "answer": "Un **`record`** (Java 16+) es una clase **inmutable** y transparente: declaras los componentes y el compilador genera constructor canónico, getters, `equals`, `hashCode` y `toString`. Sus campos son `final`.\n\nAl ser inmutable es **thread-safe por construcción**: ningún hilo puede mutar su estado, así que no hay condiciones de carrera. Ideal para DTOs, value objects de DDD, eventos y mensajes entre hilos. Si necesitas un \"cambio\", creas una copia nueva (`with`-style)."
+      "answer": "Un **`record`** (Java 16+) es una clase **inmutable y transparente**: declaras los campos en la cabecera y el compilador genera constructor canónico, `getters`, `equals`, `hashCode` y `toString`.\n\n```java\n// Declaración compacta\nrecord Punto(double x, double y) {}\n\n// Equivalente aproximado (sin record — ~30 líneas):\n// final class Punto { private final double x, y; public Punto(...) {...} ... }\n\n// Uso\nvar p = new Punto(3.0, 4.0);\nSystem.out.println(p.x());     // getter: nombre del campo\nSystem.out.println(p);         // Punto[x=3.0, y=4.0]\n\n// Compact constructor — validación:\nrecord Rango(int min, int max) {\n    Rango { if (min > max) throw new IllegalArgumentException(); }\n}\n```\n\n**Cuándo usarlo**: DTOs, value objects del dominio (`ConectorId`, `EventKey`). **No usarlo** cuando necesites mutabilidad o herencia (records son `final`).\n\n**En Agata Next**: los value objects del dominio (`ConectorId`, `TopicPartition`) se modelan como records."
     },
     {
       "id": "spring-6",
@@ -758,7 +758,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Qué verbos HTTP son idempotentes y seguros? ¿Por qué importa?",
-      "answer": "- **Seguros** (no mutan estado): `GET`, `HEAD`, `OPTIONS`.\n- **Idempotentes** (N llamadas = mismo efecto que 1): `GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`.\n- **No idempotentes**: `POST` (crea un recurso nuevo cada vez), `PATCH` (depende de la operación).\n\nImporta para **reintentos**: un cliente/proxy puede reintentar con seguridad un `PUT` o `DELETE` tras un timeout, pero reintentar un `POST` puede crear duplicados → de ahí patrones como **idempotency-key** en pagos."
+      "answer": "```\n┌─────────┬────────┬─────────────┬──────────────────────────────────┐\n│ Verbo   │ Seguro │ Idempotente │ Nota                             │\n├─────────┼────────┼─────────────┼──────────────────────────────────┤\n│ GET     │  ✓     │     ✓       │ Solo lectura                     │\n│ HEAD    │  ✓     │     ✓       │ Como GET sin body                │\n│ OPTIONS │  ✓     │     ✓       │ Descubrimiento CORS              │\n│ PUT     │  ✗     │     ✓       │ Mismo PUT → mismo estado final   │\n│ DELETE  │  ✗     │     ✓       │ Borrar 2 veces → mismo resultado │\n│ POST    │  ✗     │     ✗       │ Cada llamada puede crear un nuevo│\n│ PATCH   │  ✗     │     ✗*      │ *depende de la implementación    │\n└─────────┴────────┴─────────────┴──────────────────────────────────┘\n```\n\n- **Seguro**: no muta estado del servidor.\n- **Idempotente**: múltiples llamadas idénticas producen el **mismo resultado** que una sola.\n\n**Implicación práctica**: los clientes HTTP pueden reintentar automáticamente GET/PUT/DELETE ante timeout; **nunca** deben reintentar POST sin control de idempotencia (riesgo de duplicados)."
     },
     {
       "id": "sec-4",
@@ -865,7 +865,7 @@
       ],
       "difficulty": "hard",
       "question": "¿Cómo mantienes consistencia en una transacción que cruza varios microservicios?",
-      "answer": "No puedes usar una transacción ACID distribuida (2PC escala mal y acopla). Se usa el patrón **Saga**: una secuencia de transacciones **locales**, cada una en su servicio, con **acciones compensatorias** si un paso falla (deshacer lo anterior).\n\nDos estilos:\n- **Coreografía**: cada servicio reacciona a eventos y emite el suyo. Desacoplado pero el flujo queda \"repartido\" y difícil de seguir.\n- **Orquestación**: un orquestador central dirige los pasos y las compensaciones. Más visible y fácil de cambiar, pero un punto central.\n\nEs **eventual consistency**: durante la saga el sistema está temporalmente inconsistente. Requiere idempotencia y manejo de fallos."
+      "answer": "No puedes usar una transacción ACID distribuida (2PC escala mal y acopla). Se usa el patrón **Saga**: secuencia de transacciones locales con **compensaciones** si falla algún paso.\n\n```\nSaga Coreografía (eventos):\n  ConectorService ──► evento CrearConector\n  KafkaService    ◄── escucha CrearConector ──► evento TopicCreado\n  MonitorService  ◄── escucha TopicCreado   ──► fin\n\n  Si falla KafkaService → publica TopicFallido\n  ConectorService ◄── escucha TopicFallido → COMPENSA (borra conector)\n\nSaga Orquestación (orquestador central):\n  Orchestrator ──► cmd CreateTopic  ──► KafkaService\n  Orchestrator ◄── reply TopicOK\n  Orchestrator ──► cmd RegisterMonitor ──► MonitorService\n  ...si falla → Orchestrator envía cmds de compensación\n```\n\n**Alternativas**: **Outbox Pattern** (atomicidad local + CDC con Debezium) para garantizar que el evento se publica si y solo si la transacción local persiste.\n\n**En Agata Next**: se usa Outbox + Debezium con PostgreSQL CNPG para garantizar exactly-once en la publicación de eventos de dominio a Kafka."
     },
     {
       "id": "arch-10",
@@ -876,7 +876,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Qué es una Anti-Corruption Layer (ACL)?",
-      "answer": "Una **Anti-Corruption Layer** es una capa de traducción que protege tu modelo de dominio del modelo de **otro** bounded context o sistema externo (legacy, API de terceros). En vez de dejar que sus conceptos y nombres \"contaminen\" tu dominio, la ACL **traduce** entre ambos lenguajes ubicuos (DTOs externos ↔ tus objetos de dominio).\n\nSe materializa como adaptadores + mappers en la capa de infraestructura. Beneficio: si el sistema externo cambia o tiene un modelo feo, el impacto queda **aislado** en la ACL y tu dominio permanece limpio y estable."
+      "answer": "Una **Anti-Corruption Layer (ACL)** es una capa de traducción que protege tu modelo de dominio del modelo externo (legacy, tercero, otro bounded context).\n\n```\nTu dominio limpio          ACL                  Sistema externo\n┌───────────────┐    ┌──────────────────┐    ┌────────────────┐\n│  Conector     │    │  ExternoAdapter  │    │  SAP / Legacy  │\n│  (tu modelo)  │◄───│  traduce:        │───►│  (su modelo)   │\n│               │    │  ExternoDTO →    │    │                │\n│               │    │  Conector        │    │                │\n└───────────────┘    └──────────────────┘    └────────────────┘\n```\n\n```java\n// Sin ACL — contaminas tu dominio con el modelo externo:\nclass Conector {\n    SapConectorV2DTO sapData;  // ← MALO: dependencia del modelo SAP\n}\n\n// Con ACL — traductor explícito:\nclass SapConectorAdapter implements ConectorRepository {\n    @Override\n    public Conector findById(ConectorId id) {\n        SapConectorV2DTO dto = sapClient.get(id.value());\n        return new Conector(dto.getCodigo(), dto.getEstadoActivo());  // traduce\n    }\n}\n```\n\n**Cuándo necesitarla**: al integrar con sistemas legacy, APIs de terceros, o al consumir eventos de otro bounded context con un modelo distinto."
     },
     {
       "id": "db-6",
@@ -1252,7 +1252,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Cuál es la diferencia entre un Mock y un Spy?",
-      "answer": "- **Mock**: objeto **falso** (proxy) que sustituye una dependencia. Por defecto sus métodos **no hacen nada** / devuelven valores vacíos; **tú** defines su comportamiento con `when(...).thenReturn(...)`. No ejecuta código real.\n- **Spy**: envuelve una **instancia real**; por defecto **ejecuta el código real**, pero puedes stubbear métodos concretos.\n\nRegla: usa **mock** para aislar por completo la dependencia (lo habitual en tests unitarios); usa **spy** cuando quieres el comportamiento real salvo una pieza. Abusar del spy suele ser un *code smell* (probar implementación en vez de comportamiento)."
+      "answer": "- **Stub**: devuelve datos predefinidos. No verifica interacciones.\n- **Mock**: igual que stub + **verifica** que se llamó (cuántas veces, con qué args).\n- **Spy**: **envuelve un objeto real**; ejecuta el código real salvo lo que explícitamente stubbees.\n\n```java\n// Stub — solo datos\n@Mock ConectorRepository repo;  // Mockito crea un stub por defecto (devuelve null/0)\nwhen(repo.findById(id)).thenReturn(Optional.of(conector));\n\n// Mock — además verifica\nverify(repo, times(1)).save(any(Conector.class));\n\n// Spy — objeto real + override selectivo\n@Spy ConectorService service = new ConectorService(repo);\ndoReturn(fakeResult).when(service).metodoLento(any());\n// el resto de métodos de service ejecutan código REAL\n```\n\n**Regla**: en tests de unidad prefiere **mocks** para dependencias externas; usa **spy** solo cuando necesitas el comportamiento real de parte del objeto bajo test. Mockito strict stubs fallan si declaras un stub que no se usa (evita tests ruidosos)."
     },
     {
       "id": "test-3",
@@ -1263,7 +1263,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Diferencia entre @Mock/@Spy y @MockBean/@SpyBean?",
-      "answer": "- **`@Mock` / `@Spy`** (Mockito): crean el doble en el **test**, sin contexto de Spring. Para **tests unitarios** puros (rápidos). Se inyectan con `@InjectMocks`.\n- **`@MockBean` / `@SpyBean`** (Spring Boot Test): crean el doble y lo **registran en el ApplicationContext**, **reemplazando** el bean real. Para **tests de integración** con `@SpringBootTest`/slices donde Spring inyecta dependencias.\n\nDiferencia clave: el `…Bean` mete el doble en el **contexto de Spring** (y al modificar el contexto puede **invalidar su caché** → suites más lentas). Usa Mockito puro cuando no necesites levantar el contexto."
+      "answer": "- **`@Mock`** (Mockito puro): crea el doble en el **test sin contexto Spring**. Ultrarrápido.\n- **`@MockBean`** (Spring Boot Test): crea el doble **y lo registra en el ApplicationContext**, reemplazando el bean real. Necesario cuando el componente bajo test está en el contexto Spring.\n\n```java\n// @Mock — test unitario (sin Spring)\n@ExtendWith(MockitoExtension.class)\nclass ConectorServiceTest {\n    @Mock ConectorRepository repo;          // Mockito puro\n    @InjectMocks ConectorService service;   // inyecta los mocks\n\n    @Test void crea() { ... }\n}\n\n// @MockBean — test de integración Spring\n@SpringBootTest\nclass ConectorControllerIT {\n    @Autowired MockMvc mvc;\n    @MockBean ConectorService service;   // reemplaza el bean en el contexto\n\n    @Test void endpoint() throws Exception {\n        when(service.get(id)).thenReturn(dto);\n        mvc.perform(get(\"/api/conectores/\" + id)).andExpect(status().isOk());\n    }\n}\n```\n\n**Regla**: usa `@Mock` siempre que puedas (más rápido). Usa `@MockBean` solo en tests que levanten el contexto Spring (`@SpringBootTest`, `@WebMvcTest`)."
     },
     {
       "id": "test-4",
@@ -1274,7 +1274,7 @@
       ],
       "difficulty": "easy",
       "question": "¿Diferencia entre prueba unitaria y de integración? ¿Cuándo prefieres cada una?",
-      "answer": "- **Unitaria**: verifica una **unidad aislada** (clase/método) con sus dependencias **mockeadas**. Rápida, determinista, sin BD/red. Prueba **lógica**.\n- **Integración**: verifica que **varias piezas colaboran** de verdad, incluyendo infraestructura real o casi real (BD, repositorios, HTTP, mensajería). Más lenta; prueba la **fontanería**: mapeos JPA, queries, serialización, configuración de Spring.\n\nCuándo: la **mayoría unitarias** (base de la pirámide); **integración** donde el riesgo está en la integración (persistencia, controllers, clientes). Para integración con BD/Kafka reales → **Testcontainers**."
+      "answer": "```\n┌──────────────────┬──────────────┬────────────┬──────────────┐\n│ Tipo             │ Aislamiento  │ Velocidad  │ Cobertura    │\n├──────────────────┼──────────────┼────────────┼──────────────┤\n│ Unitaria         │ Total (mocks)│ ms         │ Una clase    │\n│ Integración      │ Parcial      │ s          │ N capas/beans│\n│ E2E / Contract   │ Ninguno      │ min        │ Sistema real │\n└──────────────────┴──────────────┴────────────┴──────────────┘\n```\n\n```java\n// Unitaria — ConectorService con mocks de sus deps\n@ExtendWith(MockitoExtension.class)\nclass ConectorServiceTest { @Mock repo; @InjectMocks service; }\n\n// Integración — Spring slice + Testcontainers MongoDB\n@DataMongoTest\n@Testcontainers\nclass ConectorRepoIT {\n    @Container static MongoDBContainer mongo = new MongoDBContainer(\"mongo:7\");\n}\n\n// Integración HTTP — @WebMvcTest (contexto web parcial, sin BD)\n@WebMvcTest(ConectorController.class)\nclass ConectorControllerTest { @MockBean service; @Autowired mvc; }\n```\n\n**Pirámide**: muchos tests unitarios, algunos de integración, pocos E2E. En Agata Next los conectores tienen ~80% unitarios + slices `@DataMongoTest`/`@DataJpaTest` + un test de contrato Pact por cada API pública."
     },
     {
       "id": "test-5",
@@ -1317,7 +1317,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Qué son los principios SOLID?",
-      "answer": "Cinco principios de diseño OO:\n- **S — Single Responsibility**: una clase, una razón para cambiar.\n- **O — Open/Closed**: abierta a extensión, cerrada a modificación.\n- **L — Liskov Substitution**: una subclase debe poder sustituir a su base sin romper el contrato.\n- **I — Interface Segregation**: interfaces pequeñas y específicas, no *god interfaces*.\n- **D — Dependency Inversion**: depende de **abstracciones**, no de implementaciones — la base de hexagonal: el dominio define puertos y la infraestructura los implementa.\n\nObjetivo: código **mantenible, extensible y testeable**. Encajan de lleno con arquitectura hexagonal y Clean Code."
+      "answer": "Cinco principios de diseño OO:\n\n```\nS — Single Responsibility   Una clase, una razón para cambiar.\n    ConectorService no debería también hacer logging de auditoría.\n\nO — Open/Closed             Abierto a extensión, cerrado a modificación.\n    Añade comportamiento vía polimorfismo, no editando la clase existente.\n\nL — Liskov Substitution     Las subclases deben poder sustituir a la base\n    sin romper el contrato. Un Mock de ConectorRepo debe comportarse como el real.\n\nI — Interface Segregation   Interfaces pequeñas y específicas.\n    Mejor ConectorReader + ConectorWriter que un ConectorRepository con 20 métodos.\n\nD — Dependency Inversion    Depende de abstracciones (interfaces), no de\n    implementaciones concretas. El dominio depende de ConectorRepository (interfaz),\n    no de MongoConectorRepository (clase).\n```\n\n**En Agata Next**: DIP es la base de la arquitectura hexagonal — el dominio define los puertos (abstracciones) y la infraestructura los implementa."
     },
     {
       "id": "test-9",
@@ -1337,7 +1337,7 @@
       ],
       "difficulty": "medium",
       "question": "¿Cómo es un buen test (AAA / Given-When-Then, FIRST)?",
-      "answer": "Estructura con **AAA / Given-When-Then**: *Given* (arrange: prepara estado y mocks) · *When* (act: ejecuta lo que pruebas) · *Then* (assert: verifica resultado y/o interacciones).\n\nUn buen test cumple **FIRST**:\n- **F**ast (rápido), **I**ndependent (no depende de otros ni del orden), **R**epeatable (mismo resultado siempre, sin depender de fecha/red), **S**elf-validating (pasa/falla solo), **T**imely (escrito a tiempo, idealmente antes — TDD).\n\nAdemás: **un concepto por test**, nombre que describe el comportamiento, asserts claros, y probar **comportamiento** (qué hace) no implementación (cómo)."
+      "answer": "Estructura **AAA / Given-When-Then**: organiza el test en tres bloques claros para maximizar legibilidad.\n\n```java\n@Test\nvoid deberiaRechazarConectorSinNombre() {\n    // Given — prepara estado, mocks y datos de entrada\n    var cmd = new CrearConectorCmd(\"\", TipoConector.KAFKA);\n    // no hay stub de repo porque esperamos fallo antes de llamarlo\n\n    // When — ejecuta la acción bajo test\n    var ex = assertThrows(\n        ValidationException.class,\n        () -> service.crear(cmd)\n    );\n\n    // Then — verifica resultado\n    assertThat(ex.getMessage()).contains(\"nombre\");\n    verify(repo, never()).save(any());  // confirmamos que no persiste\n}\n```\n\n**Reglas**:\n- Cada test verifica **una sola cosa** (un `when`).\n- El nombre del método describe el escenario: `deberiaX_cuandoY`.\n- **No comentarios `// given` si el código ya es claro** — solo como guía cuando el arrange es largo.\n- Un test que falla debe decirte **exactamente qué y por qué** sin leer el código de producción."
     },
     {
       "id": "redis-1",
@@ -2020,7 +2020,7 @@
       ],
       "difficulty": "easy",
       "question": "Adapter y Facade: ¿qué problema resuelven y cómo se ven en arquitectura hexagonal?",
-      "answer": "- **Adapter**: convierte la interfaz de una clase en otra que el cliente espera. \"Encajar un enchufe en una toma\". En **hexagonal** los *adapters* (driving/driven) son literalmente este patrón: encajan un sistema externo en el contrato del puerto del dominio.\n- **Facade**: una interfaz **simplificada** sobre un subsistema complejo (oculta varias clases tras una fachada limpia). Ejemplo: un `ServicioFacturacion.crear(...)` que internamente coordina 5 servicios.\n\nDiferencia: Adapter cambia la forma; Facade simplifica. Un cliente Feign generado desde un OpenAPI es un Adapter al sistema externo; el caso de uso de aplicación que orquesta 3 servicios y los oculta tras una API limpia es un Facade."
+      "answer": "- **Adapter**: convierte la **interfaz** de una clase en otra que el cliente espera (incompatibilidad de contratos).\n- **Decorator**: añade **comportamiento** a un objeto sin alterar su interfaz ni su clase.\n- **Facade**: proporciona una **interfaz simplificada** a un subsistema complejo.\n\n```\nAdapter:                    Decorator:                 Facade:\n[Cliente]                   [Cliente]                  [Cliente]\n    │ llama a ITarget            │ llama a IConector         │ llama a Facade\n    ▼                            ▼                           ▼\n[Adapter]                   [RetryDecorator]           [KafkaFacade]\n    │ traduce y llama            │ retry + llama             │ simplifica\n    ▼                            ▼                           ├──► AdminClient\n[Adaptee (API distinta)]    [ConectorService]          │──► Producer\n                                                        └──► Consumer\n```\n\n```java\n// Adapter — legacy SAP con interfaz incompatible\nclass SapAdapter implements ConectorRepository {\n    private SapLegacyClient sap;\n    public Conector findById(ConectorId id) {\n        return mapFromSap(sap.queryCntr(id.raw()));\n    }\n}\n\n// Decorator — añade retry transparente\nclass RetryingConectorRepo implements ConectorRepository {\n    private ConectorRepository delegate;\n    public Conector findById(ConectorId id) {\n        return retryTemplate.execute(ctx -> delegate.findById(id));\n    }\n}\n```"
     },
     {
       "id": "patterns-8",
