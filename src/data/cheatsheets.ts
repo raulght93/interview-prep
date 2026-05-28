@@ -92,9 +92,11 @@ export const CHEATSHEETS: CheatSheet[] = [
       'N:M = 3 tablas (unión con 2 FKs + PK compuesta). PK identifica; FK referencia (integridad referencial).',
       '1FN atómico · 2FN toda la clave (no parciales) · 3FN nada más que la clave (no transitivas).',
       'Índice compuesto: orden importa (prefijo más a la izquierda). HAVING sin GROUP BY = agregado global.',
-      'ACID: Atomicidad, Consistencia, Aislamiento, Durabilidad.',
-      'Aislamiento: READ UNCOMMITTED→COMMITTED→REPEATABLE READ→SERIALIZABLE (dirty/non-repeatable/phantom).',
+      'ACID: Atomicidad, Consistencia, Aislamiento, Durabilidad. Aislamiento: READ UNCOMMITTED→COMMITTED→REPEATABLE READ→SERIALIZABLE.',
+      'MVCC (Postgres/Oracle): varias versiones por fila, lectores no bloquean escritores. VACUUM limpia versiones obsoletas.',
+      'Deadlock = dos tx esperándose. Evita: orden consistente de locks, tx cortas, reintentos con backoff.',
       'Mongo: documental, embeber vs referenciar según acceso. Persistencia políglota: el almacén adecuado a cada caso.',
+      'Neo4j (grafo): nodos+relaciones con propiedades, recorridos O(salto). Cypher: (a:Tipo)-[:REL]->(b). Cuándo: redes, recomendaciones, GIS, topología, fraude.',
     ],
   },
   {
