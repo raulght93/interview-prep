@@ -150,6 +150,29 @@ export const CHEATSHEETS: CheatSheet[] = [
       'Contract testing (Pact): el consumidor define lo que espera; falla el build del proveedor si rompe.',
     ],
   },
+  {
+    topicId: 'patterns',
+    points: [
+      'GoF: creacionales (Singleton, Factory, Builder), estructurales (Adapter, Decorator, Facade, Proxy), comportamiento (Strategy, Observer, Template Method).',
+      'Singleton: bean Spring por defecto. Antipatrón si es variable global con estado mutable.',
+      'Strategy = lambda con interfaz funcional. Spring inyecta Map<String, Strategy>.',
+      'Decorator añade comportamiento, Proxy controla acceso. @Transactional/@Cacheable = AOP proxy → cuidado self-invocation.',
+      'Distribuidos: Saga (compensación) > 2PC. Outbox: escribir BD + evento atómico. Idempotent consumer obligatorio (at-least-once).',
+      'CQRS: separa read/write. ACL aísla modelos externos. Anti-patterns: anemic domain, god class, primitive obsession, distributed monolith.',
+    ],
+  },
+  {
+    topicId: 'obs',
+    points: [
+      '3 pilares: métricas (agregadas), logs (texto/JSON), traces (recorrido de petición).',
+      'Prometheus + Micrometer: counter/gauge/histogram. p95/p99 (no la media). Cuidado cardinalidad de tags.',
+      'OpenTelemetry estándar (CNCF) para producir telemetría. Spans anidados, traceparent header, sampling.',
+      'Logs estructurados JSON + MDC (traceId/userId). Filebeat → Logstash → OpenSearch + Dashboards.',
+      'Liveness (reinicia) vs Readiness (saca del Service). No confundir o reinicios en bucle.',
+      'Resilience4j: circuit breaker, retry+backoff, rate limiter, bulkhead, time limiter.',
+      'SLI (métrica) · SLO (objetivo interno) · SLA (contrato externo) · error budget (1-SLO).',
+    ],
+  },
 ];
 
 export function cheatsheet(topicId: string): CheatSheet | undefined {

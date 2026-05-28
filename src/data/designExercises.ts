@@ -90,6 +90,30 @@ export const DESIGN_EXERCISES: DesignExercise[] = [
   },
 ];
 
+DESIGN_EXERCISES.push({
+  id: 'cep',
+  title: 'Correlación de eventos en tiempo real (CEP)',
+  emoji: '⚡',
+  context:
+    'Una plataforma de seguridad portuaria recibe eventos de varios sistemas (CCTV, control de accesos, sensores IoT). Hay que detectar patrones de eventos en tiempo real y generar alertas. Volumen alto, latencia baja. (Clavado al Apache Flink + Kafka de Agata Next.)',
+  requirements: [
+    'Recibir eventos de varios subsistemas (vídeo, accesos, sensores) por Kafka.',
+    'Detectar correlaciones temporales (p.ej. 3 alarmas en el mismo sensor en 5 min → incidente).',
+    'Emitir un evento de alerta al detectar el patrón, hacia otros consumidores.',
+    'Alta disponibilidad y exactly-once dentro del pipeline (no perder ni duplicar alertas).',
+    'Volumen elevado y latencia sub-segundo.',
+  ],
+  rubric: [
+    { area: 'Ingesta', points: ['Eventos en topics Kafka por subsistema con clave de particionado adecuada (sensor_id, area)', 'Schema Registry para versionar eventos (AsyncAPI)'] },
+    { area: 'Motor de stream', points: ['Apache Flink (CEP) para correlación temporal con estado', 'Ventanas (sliding/tumbling, event-time + watermarks)', 'JobManager + N TaskManagers; paralelismo por slots'] },
+    { area: 'Estado y tolerancia', points: ['State backend RocksDB (estado grande)', 'Checkpoints periódicos en almacenamiento durable', 'Exactly-once dentro de Flink (offsets + state coherentes)'] },
+    { area: 'Salida', points: ['Topic de alertas (versionado, p.ej. alerta-correlacionada.v1)', 'Consumers downstream (notificaciones, panel de operador) con idempotencia'] },
+    { area: 'NFRs', points: ['Latencia sub-segundo (event-time, watermarks ajustados)', 'Observabilidad (métricas Flink, lag de consumers, dashboards)', 'Escalado: añadir TaskManagers o aumentar slots'] },
+  ],
+  model:
+    'Pipeline **Kafka → Flink (CEP) → Kafka**, sin acoplar productores y consumidores finales.\n\n1. **Ingesta**: cada subsistema publica en su topic con clave por entidad (`sensor_id` o `area`) para que el orden por entidad esté garantizado por partición. Eventos como **DTOs técnicos** descritos en **AsyncAPI** + **Schema Registry** para evolución compatible.\n2. **CEP con Apache Flink**: un job consume los topics, define **patrones temporales** (p.ej. `Pattern.<Evento>begin("a").next("b").within(5min)` o `KeyedProcessFunction` con timers) sobre **event-time** + watermarks para tolerar eventos algo tardíos. **Estado** por sensor en **RocksDB**; **checkpoints** periódicos (PVC/Ceph) para tolerancia a fallos → exactly-once dentro del job.\n3. **Salida**: al detectarse el patrón, Flink publica un `alerta-correlacionada.v1` a otro topic. Consumers downstream (notificaciones, dashboard de operador) procesan con **idempotencia** (clave de deduplicación) porque Kafka es at-least-once entre sistemas.\n4. **Escalado**: paralelismo = nº de slots; añadir TaskManagers o aumentar slots. En Agata Next el cluster es 1 JM + 6 TM con 19 slots cada uno (114 totales).\n5. **NFRs**: latencia sub-segundo gracias a streaming + state local; **observabilidad** vía JMX exporters → Prometheus → Grafana, lag de consumers monitorizado, alertas si crece. Logs estructurados en OpenSearch con correlation id por evento.\n\nJustificación: Kafka Streams quedaría corto para CEP complejo con ventanas grandes; Flink es el motor adecuado por su gestión de estado y tiempo.',
+});
+
 export function designExercise(id: string): DesignExercise | undefined {
   return DESIGN_EXERCISES.find((e) => e.id === id);
 }

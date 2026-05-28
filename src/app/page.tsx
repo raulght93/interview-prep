@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, FileText, MessageSquare, PenTool, RotateCcw, Shuffle, Timer, UserRound } from 'lucide-react';
+import { BookOpen, CalendarDays, FileText, MessageSquare, PenTool, RotateCcw, Shuffle, Timer, UserRound } from 'lucide-react';
 import { questions, questionsByTopic, topicsByPriority } from '@/lib/data';
 import { topicStats } from '@/lib/srs';
 import { useProgress } from '@/lib/useProgress';
@@ -83,6 +83,12 @@ export default function Home() {
             className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
           >
             <UserRound size={15} aria-hidden /> Tu experiencia
+          </Link>
+          <Link
+            href="/teoria/"
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
+          >
+            <BookOpen size={15} aria-hidden /> Teoría
           </Link>
           <Link
             href="/chuletas/"
