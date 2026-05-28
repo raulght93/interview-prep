@@ -1,5 +1,5 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type CardStatus = 'new' | 'known' | 'review';
+export type CardStatus = 'new' | 'known' | 'review' | 'skipped';
 export type Risk = 'alto' | 'medio' | 'bajo';
 
 export interface Question {

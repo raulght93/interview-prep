@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, PartyPopper } from 'lucide-react';
+import { ArrowLeft, Check, PartyPopper, SkipForward } from 'lucide-react';
 import { questions, getTopic } from '@/lib/data';
 import { shuffle } from '@/lib/srs';
 import { getCard } from '@/lib/storage';
@@ -56,6 +56,13 @@ export default function ReviewPage() {
     setIdx((i) => i + 1);
   }
 
+  function skipIt() {
+    if (!currentId) return;
+    mark(currentId, 'skipped');
+    setFlipped(false);
+    setIdx((i) => i + 1);
+  }
+
   useKeyboard(
     useMemo(
       () => ({
@@ -64,6 +71,7 @@ export default function ReviewPage() {
           reveal();
         },
         k: knewIt,
+        s: skipIt,
         ArrowRight: keepReviewing,
       }),
       [currentId],
@@ -114,20 +122,30 @@ export default function ReviewPage() {
 
             <Flashcard question={current} flipped={flipped} status="review" onFlip={reveal} />
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-5 flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={knewIt}
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white transition hover:bg-emerald-500"
+                >
+                  <Check size={18} aria-hidden /> La sabía <kbd className="hidden text-xs opacity-70 sm:inline">k</kbd>
+                </button>
+                <button
+                  type="button"
+                  onClick={keepReviewing}
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 px-4 py-2.5 font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
+                >
+                  Sigue en repaso →
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={knewIt}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white transition hover:bg-emerald-500"
+                onClick={skipIt}
+                className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-400"
+                title="No la quiero repasar más"
               >
-                <Check size={18} aria-hidden /> La sabía <kbd className="hidden text-xs opacity-70 sm:inline">k</kbd>
-              </button>
-              <button
-                type="button"
-                onClick={keepReviewing}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 px-4 py-2.5 font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-              >
-                Sigue en repaso →
+                <SkipForward size={15} aria-hidden /> Saltar (sácala del repaso) <kbd className="hidden text-xs opacity-70 sm:inline">s</kbd>
               </button>
             </div>
           </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  BookOpen, CalendarDays, CheckCircle2, ChevronRight, FileText, ListChecks,
+  BookOpen, CalendarDays, CheckCircle2, ChevronRight, FileText, HelpCircle, ListChecks,
   MessageSquare, PenTool, RotateCcw, Shuffle, Sparkles, Timer, UserRound, X,
   type LucideIcon,
 } from 'lucide-react';
@@ -48,7 +48,8 @@ const TOOLS: { section: string; tools: Tool[] }[] = [
     tools: [
       { href: '/teoria/', label: 'Teoría', desc: 'Resúmenes que atan los conceptos clave de cada bloque.', icon: BookOpen },
       { href: '/chuletas/', label: 'Chuletas', desc: 'Puntos clave por bloque para el repaso de última hora.', icon: FileText },
-      { href: '/experiencia/', label: 'Tu experiencia', desc: 'Pitch, matriz de tech, trayectoria y preguntas para hacerles.', icon: UserRound },
+      { href: '/experiencia/', label: 'Tu experiencia', desc: 'Pitch, matriz de tech, trayectoria, puntos a vender/cubrir.', icon: UserRound },
+      { href: '/preguntas/', label: 'Preguntas para ellos', desc: 'Categorizadas (equipo, técnico, entrega, observabilidad, producto, crecimiento) + 5 esenciales.', icon: HelpCircle },
     ],
   },
 ];

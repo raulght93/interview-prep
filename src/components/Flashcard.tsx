@@ -7,12 +7,14 @@ const statusLabel: Record<CardStatus, string> = {
   new: 'Nueva',
   known: 'La sabías',
   review: 'Para repasar',
+  skipped: 'Saltada',
 };
 
 const statusStyle: Record<CardStatus, string> = {
   new: 'bg-zinc-200 text-zinc-700 dark:bg-ink-700 dark:text-zinc-300',
   known: 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200',
   review: 'bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200',
+  skipped: 'bg-zinc-300 text-zinc-600 line-through dark:bg-ink-600 dark:text-zinc-400',
 };
 
 const difficultyDot: Record<string, string> = {

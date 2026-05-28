@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, RotateCcw, Shuffle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, RotateCcw, Shuffle, SkipForward } from 'lucide-react';
 import type { CardStatus } from '@/lib/types';
 import { getTopic, questionsByTopic } from '@/lib/data';
 import { srsSort, shuffle } from '@/lib/srs';
@@ -86,6 +86,7 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
         ArrowLeft: goPrev,
         k: () => handleMark('known'),
         r: () => handleMark('review'),
+        s: () => handleMark('skipped'),
       }),
       [doFlip, goNext, goPrev, handleMark],
     ),
@@ -157,14 +158,14 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
           <button
             type="button"
             onClick={() => handleMark('known')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white transition hover:bg-emerald-500"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white transition hover:bg-emerald-500"
           >
             <Check size={18} aria-hidden /> La sabía <kbd className="hidden text-xs opacity-70 sm:inline">k</kbd>
           </button>
           <button
             type="button"
             onClick={() => handleMark('review')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 font-medium text-amber-950 transition hover:bg-amber-400"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 font-medium text-amber-950 transition hover:bg-amber-400"
           >
             <RotateCcw size={18} aria-hidden /> Repasar <kbd className="hidden text-xs opacity-70 sm:inline">r</kbd>
           </button>
@@ -174,15 +175,23 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
             type="button"
             onClick={goPrev}
             disabled={idx === 0}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent disabled:opacity-40 dark:border-ink-600 dark:text-zinc-300"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent disabled:opacity-40 dark:border-ink-600 dark:text-zinc-300"
           >
             <ArrowLeft size={16} aria-hidden /> Anterior
           </button>
           <button
             type="button"
+            onClick={() => handleMark('skipped')}
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-300"
+            title="No la sé y no quiero repasarla — sácala del repaso"
+          >
+            <SkipForward size={16} aria-hidden /> Saltar <kbd className="hidden text-xs opacity-70 sm:inline">s</kbd>
+          </button>
+          <button
+            type="button"
             onClick={goNext}
             disabled={idx === order.length - 1}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent disabled:opacity-40 dark:border-ink-600 dark:text-zinc-300"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent disabled:opacity-40 dark:border-ink-600 dark:text-zinc-300"
           >
             Siguiente <ArrowRight size={16} aria-hidden />
           </button>

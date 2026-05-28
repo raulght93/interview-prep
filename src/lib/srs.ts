@@ -18,6 +18,8 @@ function statusWeight(status: string): number {
       return 1;
     case 'known':
       return 2;
+    case 'skipped':
+      return 3; // Lowest priority — el usuario pidió no verlas.
     default:
       return 1;
   }
@@ -49,6 +51,7 @@ export interface TopicStats {
   total: number;
   known: number;
   review: number;
+  skipped: number;
   newCount: number;
   knownPct: number;
 }
@@ -56,11 +59,13 @@ export interface TopicStats {
 export function topicStats(questions: Question[], progress: Progress): TopicStats {
   let known = 0;
   let review = 0;
+  let skipped = 0;
   let newCount = 0;
   for (const q of questions) {
     const c = getCard(progress, q.id);
     if (c.status === 'known') known++;
     else if (c.status === 'review') review++;
+    else if (c.status === 'skipped') skipped++;
     else newCount++;
   }
   const total = questions.length;
@@ -68,6 +73,7 @@ export function topicStats(questions: Question[], progress: Progress): TopicStat
     total,
     known,
     review,
+    skipped,
     newCount,
     knownPct: total ? Math.round((known / total) * 100) : 0,
   };

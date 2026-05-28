@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, PartyPopper, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, PartyPopper, RotateCcw, SkipForward } from 'lucide-react';
 import { questions, getTopic, riskRank } from '@/lib/data';
 import { shuffle } from '@/lib/srs';
 import { getCard } from '@/lib/storage';
@@ -79,6 +79,7 @@ export default function MixPage() {
         ArrowRight: next,
         k: () => handleMark('known'),
         r: () => handleMark('review'),
+        s: () => handleMark('skipped'),
       }),
       [reveal, next, handleMark],
     ),
@@ -150,13 +151,23 @@ export default function MixPage() {
                   <RotateCcw size={18} aria-hidden /> Repasar <kbd className="hidden text-xs opacity-70 sm:inline">r</kbd>
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={next}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-300"
-              >
-                Saltar <ArrowRight size={16} aria-hidden />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleMark('skipped')}
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-300"
+                  title="No la sé y no quiero repasarla"
+                >
+                  <SkipForward size={16} aria-hidden /> Saltar <kbd className="hidden text-xs opacity-70 sm:inline">s</kbd>
+                </button>
+                <button
+                  type="button"
+                  onClick={next}
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-300"
+                >
+                  Siguiente <ArrowRight size={16} aria-hidden />
+                </button>
+              </div>
             </div>
           </div>
         )
