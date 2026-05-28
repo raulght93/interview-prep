@@ -204,7 +204,7 @@ export const MCQ: McqQuestion[] = [
     explanation: 'CORS es un mecanismo del **navegador**. La petición sí sale y el servidor la procesa (en requests simples); lo que bloquea el navegador es el acceso del JS a la respuesta. No es seguridad del servidor, es protección del browser del usuario.',
   },
   {
-    id: 'mcq-cors-2', topicId: 'cors',
+    id: 'mcq-cors-2', topicId: 'rest',
     question: 'Un cliente recibe un 500. ¿De quién es la culpa?',
     options: [
       'Del cliente, por mandar mal la petición.',
@@ -333,7 +333,7 @@ export const MCQ: McqQuestion[] = [
   // ---- SQL ----
   {
     id: 'mcq-sql-1', topicId: 'sql',
-    question: 'Tabla A tiene 5 filas, tabla B tiene 10. ¿Cuántas filas devuelve A LEFT JOIN B (cardinalidad 1:1)?',
+    question: 'Tabla A tiene 5 filas, tabla B tiene 10. ¿Cuántas filas devuelve A LEFT JOIN B?',
     options: [
       'Exactamente 5.',
       'Exactamente 10.',
@@ -489,15 +489,15 @@ export const MCQ: McqQuestion[] = [
   },
   {
     id: 'mcq-obs-2', topicId: 'obs',
-    question: 'Diferencia entre liveness y readiness probes en Kubernetes.',
+    question: '¿Cuál es la diferencia entre SLI, SLO y SLA en el contexto de la observabilidad?',
     options: [
-      'Son sinónimos.',
-      'Liveness verifica el proceso (si falla, K8s reinicia el pod). Readiness verifica si está listo para tráfico (si falla, lo saca del Service sin reiniciar).',
-      'Liveness es para HTTP, readiness para TCP.',
-      'Readiness solo se usa al arrancar; liveness durante la vida.',
+      'Son términos sinónimos para "disponibilidad del sistema".',
+      'SLI = métrica medida (p99 latencia, error rate); SLO = objetivo sobre el SLI ("p99 < 200 ms el 99,9 % del tiempo"); SLA = acuerdo contractual con el cliente con penalizaciones si se incumple.',
+      'SLA es la métrica técnica; SLO el objetivo de negocio; SLI el contrato legal.',
+      'Solo las empresas grandes necesitan definir SLI/SLO/SLA.',
     ],
     correctIndex: 1,
-    explanation: 'Confundirlas es la causa típica de reinicios en bucle. Liveness comprueba que el proceso vive (deadlock, hang); si falla, REINICIA. Readiness comprueba si puede atender (BD/broker disponibles); si falla, lo saca del Service hasta que vuelva.',
+    explanation: 'SLI (Service Level Indicator): métrica concreta (latencia p99, tasa de error, disponibilidad). SLO (Service Level Objective): objetivo interno sobre el SLI ("99,9 % de peticiones < 200 ms"). SLA (Service Level Agreement): contrato externo con el cliente, suele ser más laxo que el SLO interno para dejar margen de reacción. OpenTelemetry genera los datos para los SLIs; los SLOs se monitorizan con Prometheus + alertas.',
   },
 
   // ---- Algoritmos ----
@@ -2231,15 +2231,15 @@ MCQ.push(
   },
   {
     id: 'mcq-perf-8', topicId: 'perf',
-    question: '¿Qué es el problema N+1 en JPA/Hibernate y cómo se resuelve?',
+    question: '¿Qué información proporciona un thread dump y cuándo lo usarías para diagnosticar un problema?',
     options: [
-      'Es un bug de Hibernate que ocurre solo con relaciones ManyToMany.',
-      'Al cargar N entidades con una relación lazy, se ejecuta 1 query para la colección padre y N queries para los hijos (una por entidad). Solución: `JOIN FETCH` en JPQL, `@EntityGraph`, o `@BatchSize`. También: projecciones DTO para evitar cargar entidades innecesarias.',
-      'Es un problema de concurrencia cuando N hilos acceden al mismo registro.',
-      'Solo ocurre con relaciones `@OneToMany`; `@ManyToOne` es seguro.',
+      'Muestra el uso de memoria heap por clase en un instante concreto.',
+      'Muestra el estado de todos los hilos en un instante (RUNNABLE, BLOCKED, WAITING, TIMED_WAITING) con sus stack traces. Se usa para detectar deadlocks, hilos atascados en un lock, thread starvation o hotspots de CPU.',
+      'Registra todas las peticiones HTTP procesadas en los últimos 60 segundos.',
+      'Solo lo generan aplicaciones Spring Boot; en Java estándar no existe.',
     ],
     correctIndex: 1,
-    explanation: 'N+1 es el problema de performance más común en JPA. Detección: Hibernate statistics, p6spy, o ver N queries idénticas en logs. `JOIN FETCH` en la query carga la relación en 1 sola query. `@EntityGraph` es más flexible y reutilizable. Para listas grandes, projecciones DTO con `@Query` evitan materializar entidades completas.',
+    explanation: 'Un thread dump (`jstack <pid>`, `kill -3`, `/actuator/threaddump`) captura el estado instantáneo de todos los hilos. La JVM identifica deadlocks automáticamente en el dump. Para memoria usa un heap dump (`jmap -dump:file=heap.hprof <pid>` o `-XX:+HeapDumpOnOutOfMemoryError`). En Spring Boot, `/actuator/threaddump` expone el dump vía HTTP sin necesidad de acceso al servidor.',
   },
 
   // ── ia ────────────────────────────────────────────────────────────────────
@@ -2309,15 +2309,15 @@ MCQ.push(
   // ── algo ──────────────────────────────────────────────────────────────────
   {
     id: 'mcq-algo-6', topicId: 'algo',
-    question: '¿Cuál es la complejidad temporal de las operaciones get/put en `HashMap` en Java y cuándo degrada?',
+    question: '¿Cuál es la diferencia principal entre QuickSort y MergeSort en cuanto a estabilidad y uso?',
     options: [
-      'Siempre O(1) garantizado.',
-      'O(1) amortizado en el caso promedio. Degrada a O(n) si hay muchas colisiones en un bucket. Desde Java 8, los buckets con ≥8 colisiones se convierten en árboles rojo-negro → O(log n) en el peor caso. Una función `hashCode()` pobre puede causar esto.',
-      'O(log n) siempre, por la estructura interna de árbol.',
-      'O(n) siempre porque recorre todos los elementos al buscar.',
+      'QuickSort es estable y MergeSort no.',
+      'MergeSort es estable (mantiene el orden relativo de iguales) y O(n log n) garantizado; QuickSort no es estable y su peor caso es O(n²), aunque suele ser más rápido en la práctica para datos aleatorios.',
+      'Son idénticos en comportamiento y estabilidad.',
+      'QuickSort es siempre más rápido que MergeSort en todos los casos.',
     ],
     correctIndex: 1,
-    explanation: 'HashMap: O(1) promedio. Java 8+ convierte bucket a `TreeMap` cuando hay ≥8 colisiones (`TREEIFY_THRESHOLD`) → O(log n) peor caso en ese bucket. Rehashing ocurre cuando el load factor (default 0.75) se supera → O(n) ocasional amortizado. Para claves sensibles a colisiones intencionadas (DoS), usar `LinkedHashMap` o una función hash más robusta.',
+    explanation: 'MergeSort: estable, O(n log n) siempre, O(n) espacio extra. QuickSort: no estable, O(n log n) promedio pero O(n²) peor caso (pivot malo), O(log n) pila. Java usa TimSort (merge-based, estable) para objetos porque requiere estabilidad; dual-pivot QuickSort para primitivos (la estabilidad no importa y es más rápido en la práctica).',
   },
   {
     id: 'mcq-algo-7', topicId: 'algo',
