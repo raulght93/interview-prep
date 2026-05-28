@@ -162,6 +162,20 @@ export const CHEATSHEETS: CheatSheet[] = [
     ],
   },
   {
+    topicId: 'algo',
+    points: [
+      'Big-O: O(1)<log n<n<n log n<n²<2ⁿ. Identifica el peor caso asintótico.',
+      'ArrayList: get O(1), insert end amortized O(1), insert middle O(n). LinkedList rara vez es la mejor.',
+      'HashMap: O(1) promedio. Java 8+: bucket con árbol rojinegro si >8 entradas → O(log n) peor caso. equals/hashCode consistentes.',
+      'TreeMap/TreeSet: O(log n), ordenado (rojinegro). PriorityQueue: heap binario, O(log n).',
+      'BFS = cola, camino más corto en aristas. DFS = pila/recursión, ciclos, topológico. Ambos O(V+E).',
+      'Memoization (top-down) y DP (bottom-up): subestructura óptima + subproblemas solapados.',
+      'Java sort: Arrays.sort primitivos = dual-pivot quicksort; Collections.sort = TimSort (estable).',
+      'Patrones: two pointers, sliding window, divide y vencerás, greedy, backtracking.',
+      'Concurrentes: ConcurrentHashMap (no Hashtable), CopyOnWriteArrayList (lectura intensiva), BlockingQueue, LongAdder.',
+    ],
+  },
+  {
     topicId: 'obs',
     points: [
       '3 pilares: métricas (agregadas), logs (texto/JSON), traces (recorrido de petición).',

@@ -23,13 +23,14 @@ const levelStyle: Record<TechRow['level'], string> = {
 export default function ExperienciaPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex items-center justify-between gap-3 print:hidden">
         <Link href="/" className="flex items-center gap-1.5 text-sm text-zinc-500 transition hover:text-accent dark:text-zinc-400">
           <ArrowLeft size={16} aria-hidden /> Inicio
         </Link>
         <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Resumen de experiencia</span>
         <span className="w-12" aria-hidden />
       </div>
+      <h1 className="mb-2 hidden text-2xl font-semibold text-zinc-900 print:block">Resumen de experiencia</h1>
 
       {/* Pitch */}
       <section className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-900">

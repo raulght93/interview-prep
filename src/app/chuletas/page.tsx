@@ -21,15 +21,16 @@ export default function ChuletasPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex items-center justify-between gap-3 print:hidden">
         <Link href="/" className="flex items-center gap-1.5 text-sm text-zinc-500 transition hover:text-accent dark:text-zinc-400">
           <ArrowLeft size={16} aria-hidden /> Inicio
         </Link>
         <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Chuletas · repaso rápido</span>
         <span className="w-12" aria-hidden />
       </div>
+      <h1 className="mb-2 hidden text-2xl font-semibold text-zinc-900 print:block">Chuletas — repaso rápido</h1>
 
-      <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400 print:hidden">
         Los puntos clave de cada bloque en una pantalla, para el repaso de última hora. Imprimible con Cmd/Ctrl+P.
       </p>
 
@@ -62,16 +63,14 @@ export default function ChuletasPage() {
                   <Layers size={12} aria-hidden /> cards
                 </Link>
               </div>
-              {!isCollapsed && (
-                <ul className="space-y-1.5 px-4 pb-4">
-                  {cs.points.map((p, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" aria-hidden />
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ul className={`space-y-1.5 px-4 pb-4 ${isCollapsed ? 'hidden print:block' : ''}`}>
+                {cs.points.map((p, i) => (
+                  <li key={`${cs.topicId}-${i}`} className="flex gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" aria-hidden />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
             </section>
           );
         })}

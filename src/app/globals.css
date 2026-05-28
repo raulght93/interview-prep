@@ -13,6 +13,8 @@ html {
 /* Surface defaults driven by the .dark class on <html>. */
 body {
   @apply bg-white text-zinc-900 antialiased;
+  /* Prevent accidental horizontal scroll on mobile from any overflowing element. */
+  overflow-x: hidden;
 }
 
 .dark body {
@@ -58,5 +60,50 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .flip-inner {
     transition: none;
+  }
+}
+
+/* Print stylesheet: clean output for /chuletas, /teoria, /experiencia.
+   - Black on white background regardless of dark mode.
+   - Hide navigation and decorative elements.
+   - Expand all collapsible content (handled with Tailwind's print:block on the markup). */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html.dark {
+    background: white !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  /* Avoid breaking a section across pages mid-content. */
+  section,
+  article {
+    break-inside: avoid;
+  }
+  /* Drop interactive accent colors. */
+  a {
+    color: black !important;
+    text-decoration: none;
+  }
+  /* Lighter borders for printing. */
+  .dark\:bg-ink-900,
+  .dark\:bg-ink-800,
+  .dark\:bg-ink-700 {
+    background: white !important;
+  }
+  .dark\:text-zinc-100,
+  .dark\:text-zinc-200,
+  .dark\:text-zinc-300,
+  .dark\:text-zinc-400,
+  .dark\:text-white {
+    color: black !important;
+  }
+  .dark\:border-ink-700,
+  .dark\:border-ink-600,
+  .dark\:border-ink-800 {
+    border-color: #d4d4d8 !important; /* zinc-300 */
   }
 }

@@ -113,17 +113,17 @@ export default function PlanPage() {
                       {hydrated && <span className="text-zinc-400">· {st.knownPct}%</span>}
                       <Link
                         href={`/flashcards/${tid}/`}
-                        className="ml-1 flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-white"
+                        className="ml-1 flex h-7 w-7 items-center justify-center rounded bg-accent text-white"
                         aria-label={`Flashcards de ${topic.name}`}
                       >
-                        <Layers size={12} aria-hidden />
+                        <Layers size={14} aria-hidden />
                       </Link>
                       <Link
                         href={`/quiz/${tid}/`}
-                        className="flex items-center gap-1 rounded border border-zinc-300 px-1.5 py-0.5 text-zinc-600 dark:border-ink-600 dark:text-zinc-300"
+                        className="flex h-7 w-7 items-center justify-center rounded border border-zinc-300 text-zinc-600 dark:border-ink-600 dark:text-zinc-300"
                         aria-label={`Quiz de ${topic.name}`}
                       >
-                        <ListChecks size={12} aria-hidden />
+                        <ListChecks size={14} aria-hidden />
                       </Link>
                     </div>
                   );

@@ -1,18 +1,47 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search, X } from 'lucide-react';
 import { searchQuestions, getTopic } from '@/lib/data';
 
 export default function SearchBar() {
   const [term, setTerm] = useState('');
+  const [closed, setClosed] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const results = useMemo(() => searchQuestions(term).slice(0, 30), [term]);
-  const open = term.trim().length > 0;
+  const open = term.trim().length > 0 && !closed;
+
+  // Reopen on every keystroke (term changes).
+  useEffect(() => {
+    if (term.trim().length > 0) setClosed(false);
+  }, [term]);
+
+  // Close on click outside.
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setClosed(true);
+      }
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  // Close on Escape.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setClosed(true);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapRef}>
       <div className="relative">
         <Search
           size={18}
@@ -51,6 +80,7 @@ export default function SearchBar() {
                   <li key={q.id}>
                     <Link
                       href={`/flashcards/${q.topicId}/?card=${q.id}`}
+                      onClick={() => setClosed(true)}
                       className="block px-4 py-3 transition hover:bg-zinc-50 dark:hover:bg-ink-800"
                     >
                       <p className="text-sm text-zinc-800 dark:text-zinc-100">{q.question}</p>

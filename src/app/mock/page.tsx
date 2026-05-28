@@ -100,14 +100,14 @@ function SessionPlayer({ session, onExit }: { session: MockSession; onExit: () =
 
           {/* Model answer */}
           {revealed ? (
-            <div className="ml-10 animate-fade-scale rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+            <div className="ml-6 sm:ml-10 animate-fade-scale rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/20">
               <p className="mb-1 text-[0.7rem] font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                 Respuesta modelo / puntos a tocar
               </p>
               <Markdown>{turn.model}</Markdown>
             </div>
           ) : (
-            <div className="ml-10">
+            <div className="ml-6 sm:ml-10">
               <button
                 type="button"
                 onClick={() => setRevealed(true)}
@@ -120,7 +120,7 @@ function SessionPlayer({ session, onExit }: { session: MockSession; onExit: () =
           )}
 
           {revealed && (
-            <div className="ml-10">
+            <div className="ml-6 sm:ml-10">
               <button
                 type="button"
                 onClick={next}

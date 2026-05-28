@@ -17,7 +17,8 @@
     { "id": "contracts", "emoji": "📜", "name": "OpenAPI / AsyncAPI / Contratos", "description": "Contract-first, codegen, AsyncAPI, schema registry, versionado.", "risk": "bajo" },
     { "id": "xp", "emoji": "💼", "name": "Tu experiencia / Stack real", "description": "Respuestas personales ancladas a tu CV + proyecto Agata. Personalízalas y sé honesto.", "risk": "alto" },
     { "id": "patterns", "emoji": "🧩", "name": "Patrones de diseño", "description": "GoF (creacionales, estructurales, comportamiento) + patrones de arquitectura (saga, outbox, CQRS…).", "risk": "medio" },
-    { "id": "obs", "emoji": "🔭", "name": "Observabilidad / OpenSearch", "description": "Logs, métricas, traces, OpenTelemetry, Prometheus, OpenSearch, Resilience4j, SLOs.", "risk": "medio" }
+    { "id": "obs", "emoji": "🔭", "name": "Observabilidad / OpenSearch", "description": "Logs, métricas, traces, OpenTelemetry, Prometheus, OpenSearch, Resilience4j, SLOs.", "risk": "medio" },
+    { "id": "algo", "emoji": "🧮", "name": "Algoritmos / Estructuras de datos", "description": "Big-O, listas/sets/maps/árboles/grafos, recursión y DP, patrones (two pointers, sliding window).", "risk": "bajo" }
   ],
   "questions": [
     {
@@ -964,6 +965,56 @@
       "id": "arch-26", "topicId": "arch", "tags": ["estimacion", "agile"], "difficulty": "easy",
       "question": "Estimación ágil: story points, planning poker, t-shirt sizing.",
       "answer": "Estimas **complejidad relativa**, no horas (las horas son sesgadas e inválidas a través de personas).\n- **Story points**: escala Fibonacci (1, 2, 3, 5, 8, 13, 21). Una historia de 3 es 3× más compleja que una de 1, no 3 horas. Calibrado con una historia de referencia del equipo.\n- **Planning poker**: cada miembro elige carta a la vez → revela → discuten quien votó muy alto/bajo → vuelven a votar. Saca consenso y discusiones útiles (\"no sabía que también afectaba a Y\").\n- **T-shirt sizing** (XS/S/M/L/XL): más grueso, para roadmap/épicas donde no hay detalle.\n- **#NoEstimates**: dividir todo en historias pequeñas y similares; estimar = contar.\n\nLa **velocidad** del equipo (puntos completados por sprint) es lo que da previsibilidad. No comparar velocidad entre equipos (es relativa)."
+    },
+    {
+      "id": "algo-1", "topicId": "algo", "tags": ["big-o"], "difficulty": "easy",
+      "question": "¿Qué es la notación Big-O y cuándo importa?",
+      "answer": "**Big-O** describe cómo crece el **tiempo o espacio** de un algoritmo en función del tamaño de la entrada `n`, ignorando constantes y términos menores. Se centra en el **peor caso asintótico**.\n\nClases comunes (de mejor a peor): **O(1)** constante · **O(log n)** logarítmica (búsqueda binaria) · **O(n)** lineal · **O(n log n)** (sort eficiente) · **O(n²)** cuadrática · **O(2ⁿ)** exponencial · **O(n!)** factorial.\n\nCuándo importa: cuando `n` puede crecer mucho. Un O(n²) con `n=100` es 10.000 operaciones (vale); con `n=10⁶`, es 10¹² (no termina). En entrevistas de arquitectura no te piden resolver LeetCode hard, pero sí que **identifiques** la complejidad de un loop anidado o por qué un índice en BD baja una query de O(n) a O(log n)."
+    },
+    {
+      "id": "algo-2", "topicId": "algo", "tags": ["ds", "lineales"], "difficulty": "easy",
+      "question": "Estructuras lineales: ¿array, lista enlazada, stack, queue, deque?",
+      "answer": "- **Array / ArrayList**: acceso por índice **O(1)**, insertar al final amortizado O(1), insertar/borrar en medio O(n) (shift). Memoria contigua, cache-friendly.\n- **LinkedList**: insertar/borrar O(1) si tienes la referencia al nodo, pero acceso por índice O(n). Memoria dispersa (peor caché). En Java casi nunca es la mejor opción frente a `ArrayList`.\n- **Stack (LIFO)**: push/pop O(1). En Java usa `Deque<T>` (`ArrayDeque`); `Stack` está obsoleta (sincronizada).\n- **Queue (FIFO)**: enqueue/dequeue O(1). `ArrayDeque`, `LinkedList` o `BlockingQueue` para concurrencia.\n- **Deque**: doble extremo, ambos O(1). Sustituye a stack y queue clásicas.\n- **PriorityQueue**: heap binario; añadir/quitar O(log n), peek O(1)."
+    },
+    {
+      "id": "algo-3", "topicId": "algo", "tags": ["hash", "map", "set"], "difficulty": "medium",
+      "question": "¿Cómo funciona un HashMap? ¿Por qué su acceso es \"O(1) promedio\"?",
+      "answer": "Un **HashMap** usa una **tabla hash**: aplica `hash(key)` al objeto, lo reduce módulo el tamaño del array de buckets, y guarda la entrada ahí. Lookup/insert/delete son **O(1) en promedio**.\n\nProblemas:\n- **Colisiones** (dos claves con el mismo bucket): se resuelven con **encadenamiento** (lista enlazada por bucket; en Java 8+ árbol rojinegro si la lista crece >8 → O(log n) en el peor caso, mejor que O(n)) o **open addressing**.\n- Si la tabla se llena (load factor > 0.75 en Java) se **rehashea**: tabla nueva al doble + reasignar todas las entradas (O(n) puntual).\n- **`equals` y `hashCode` consistentes**: si dos objetos son iguales (`equals`), sus hashCodes deben coincidir; si no, no los encuentras en el map.\n\n`HashSet` es un `HashMap` con valores dummy. `LinkedHashMap` mantiene orden de inserción. `TreeMap` ordena por clave (O(log n))."
+    },
+    {
+      "id": "algo-4", "topicId": "algo", "tags": ["arboles"], "difficulty": "medium",
+      "question": "Árboles binarios, BST y heap: ¿en qué se diferencian?",
+      "answer": "- **Árbol binario**: cada nodo tiene como mucho 2 hijos. Estructura genérica.\n- **BST (Binary Search Tree)**: para cada nodo, los izquierdos son menores y los derechos mayores → búsqueda/inserción **O(log n)** si está **balanceado**. Sin balanceo se degenera a O(n) (lista enlazada). Variantes auto-balanceadas: **AVL**, **rojinegro** (el de `TreeMap`/`TreeSet` en Java).\n- **Heap (binario)**: árbol completo donde la raíz es el máximo (max-heap) o mínimo (min-heap); insertar/quitar la raíz es O(log n), peek O(1). Implementado como **array**. Es la base de `PriorityQueue` y de **heap sort**.\n- **B-Tree / B+Tree**: árboles n-arios balanceados; **los usan las BD para índices** porque minimizan accesos a disco (muchas claves por nodo).\n- **Trie**: árbol de prefijos para strings; búsqueda por prefijo O(longitud_clave)."
+    },
+    {
+      "id": "algo-5", "topicId": "algo", "tags": ["grafos", "bfs", "dfs"], "difficulty": "medium",
+      "question": "Grafos: representación, BFS vs DFS, ¿cuándo cada uno?",
+      "answer": "**Representación**:\n- **Lista de adyacencia** (`Map<Nodo, List<Nodo>>`): O(V+E) memoria; ideal para grafos dispersos. Lo más común.\n- **Matriz de adyacencia** (`boolean[V][V]`): O(V²) memoria; mejor para grafos densos o consultas \"¿hay arista A↔B?\" en O(1).\n\n**Recorridos**:\n- **BFS** (Breadth-First Search): por niveles con una **cola**. Encuentra el **camino más corto en aristas** en un grafo no ponderado.\n- **DFS** (Depth-First Search): en profundidad con una **pila** (o recursión). Detección de ciclos, ordenación topológica, componentes conexas.\n\nAmbos O(V+E). Ejemplos: BFS para \"distancia mínima entre nodos\"; DFS para \"¿el grafo tiene ciclo?\" o \"orden de dependencias\". Para grafos ponderados (camino más corto) usas **Dijkstra** o **Bellman-Ford**. Casos reales en backend: dependencias de tareas, redes sociales, recomendaciones, topología de servicios."
+    },
+    {
+      "id": "algo-6", "topicId": "algo", "tags": ["recursion", "dp"], "difficulty": "medium",
+      "question": "Recursión, memoization y programación dinámica.",
+      "answer": "**Recursión**: una función que se llama a sí misma sobre un subproblema más pequeño + caso base. Elegante para árboles, grafos, divide y vencerás. Riesgo: **stack overflow** si la profundidad es muy grande; algunos lenguajes optimizan **tail calls**, Java no.\n\n**Memoization** (top-down): cacheas el resultado de cada subproblema para no recomputarlo. Convierte un exponencial en polinómico — ej. Fibonacci ingenuo es O(2ⁿ); memoizado es O(n).\n\n**Programación dinámica (DP)** (bottom-up): rellenas una tabla desde los casos base hasta el problema final. Misma idea que memoization, pero iterativa (sin recursión).\n\nCondiciones para DP: **subestructura óptima** (la solución del problema se compone de soluciones de subproblemas) y **subproblemas solapados** (los mismos subproblemas aparecen una y otra vez). Ejemplos: Fibonacci, mochila, edit distance, longest common subsequence.\n\nEn entrevistas de arquitectura raramente piden resolver DP, pero **reconocer** que un problema es DP es la pista que esperan."
+    },
+    {
+      "id": "algo-7", "topicId": "algo", "tags": ["sorting"], "difficulty": "easy",
+      "question": "Algoritmos de ordenación: ¿cuáles conoces y cuál usa Java?",
+      "answer": "- **Bubble / Insertion / Selection sort**: O(n²) — solo educativos o para n diminuto.\n- **Merge sort**: O(n log n) garantizado, **estable**, requiere O(n) extra. Divide y vencerás.\n- **Quick sort**: O(n log n) promedio, O(n²) peor caso (con pivote malo). **No estable**. Muy rápido en la práctica.\n- **Heap sort**: O(n log n) garantizado, **in-place**, no estable. Usa un heap.\n- **Tim sort**: híbrido merge + insertion. **Es el que usa `Arrays.sort` para objetos y `Collections.sort` en Java**. Estable, O(n log n), aprovecha runs ya ordenados.\n- **Counting / Radix / Bucket sort**: lineales O(n+k) en condiciones especiales (claves enteras acotadas).\n\nEn entrevistas: saber que **`Arrays.sort` de primitivos usa quicksort** dual-pivot y **`Collections.sort` usa Timsort**. Para BD, no ordenas en Java si puedes; lo haces en SQL con índice."
+    },
+    {
+      "id": "algo-8", "topicId": "algo", "tags": ["patterns"], "difficulty": "medium",
+      "question": "Patrones algorítmicos comunes: two pointers, sliding window, divide y vencerás, greedy.",
+      "answer": "- **Two pointers**: dos índices que se mueven sobre un array (mismo o extremos opuestos). Resuelve \"¿hay dos elementos que sumen X?\" en O(n) sobre array ordenado.\n- **Sliding window**: una ventana de tamaño fijo o variable que se desliza. Resuelve \"máximo / suma en una subarray de tamaño K\" o \"subarray con suma ≤ X\" en O(n).\n- **Divide y vencerás**: divides el problema en mitades, resuelves recursivamente, combinas. Merge sort, búsqueda binaria, mediana en tiempo lineal. T(n) = 2·T(n/2) + O(n) → O(n log n).\n- **Greedy**: tomas la decisión localmente óptima en cada paso. Funciona cuando hay propiedad greedy (Huffman, Kruskal/Prim para árbol de expansión mínima, scheduling por earliest deadline).\n- **Backtracking**: exploras una opción, si falla revierte y prueba otra. N-Queens, Sudoku.\n\nRegla: si te dan un array y piden O(n) o O(n log n), piensa two pointers / sliding window / sort + binary search."
+    },
+    {
+      "id": "algo-9", "topicId": "algo", "tags": ["concurrencia"], "difficulty": "medium",
+      "question": "Estructuras de datos concurrentes en Java: ¿cuándo cada una?",
+      "answer": "- **`ConcurrentHashMap`**: alternativa thread-safe a `HashMap`. Lectura sin bloqueo, escritura con locks por bucket → muy paralelizable. Ideal para cachés en memoria, contadores por clave (`computeIfAbsent`, `merge`).\n- **`CopyOnWriteArrayList`**: cada escritura copia el array entero. Caro escribir, lectura sin coste. Para listas que se leen muchísimo y se escriben poco (ej. listeners).\n- **`ConcurrentLinkedQueue` / `ConcurrentLinkedDeque`**: lock-free.\n- **`BlockingQueue`** (`LinkedBlockingQueue`, `ArrayBlockingQueue`): productor-consumidor; `put`/`take` bloquean cuando vacía/llena. Base de los thread pools (`ExecutorService`).\n- **Atomic**: `AtomicInteger`, `AtomicReference`, `AtomicLong` — operaciones CAS (Compare-And-Swap) sin bloqueos.\n- **`LongAdder` / `LongAccumulator`**: contadores escalables (mejor que `AtomicLong` con muchos hilos escribiendo).\n\nNo uses `Hashtable`/`Vector` (sincronizados pero serializan todo). Y `Collections.synchronizedMap(new HashMap<>())` no es lo mismo que `ConcurrentHashMap` (locks por método, no por bucket)."
+    },
+    {
+      "id": "algo-10", "topicId": "algo", "tags": ["meta", "backend"], "difficulty": "easy",
+      "question": "¿Cuándo importan los algoritmos en una entrevista de arquitectura backend?",
+      "answer": "Raramente te piden resolver LeetCode hard. Lo que sí esperan:\n- **Reconocer la complejidad** de tu código: \"esto es O(n²) sobre la lista de pedidos — si tienes 10k pedidos, son 10⁸ operaciones, no escala\".\n- **Elegir la estructura correcta**: \"para deduplicar mensajes por id uso un `Set`, no recorrer una lista\".\n- **Entender por qué un índice en BD es O(log n)** sobre un B-tree y por qué un seq scan es O(n).\n- **Detectar cuellos** algorítmicos en código que ya existe (loops anidados, N+1).\n- **Saber el coste** de operaciones comunes en colecciones Java.\n\nEn entrevistas de arquitectura pura suelen preguntar más por **diseño** (BCs, mensajería, persistencia) que por algoritmos. Pero si te ponen un problema (\"¿cómo deduplicarías 10M de mensajes Kafka?\") deben verte llegar a una respuesta razonada en términos de complejidad y memoria (HyperLogLog, bloom filter, Redis SETs…)."
     }
   ]
 }

@@ -1,7 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, CalendarDays, FileText, MessageSquare, PenTool, RotateCcw, Shuffle, Timer, UserRound } from 'lucide-react';
+import {
+  BookOpen, CalendarDays, CheckCircle2, ChevronRight, FileText, ListChecks,
+  MessageSquare, PenTool, RotateCcw, Shuffle, Sparkles, Timer, UserRound, X,
+  type LucideIcon,
+} from 'lucide-react';
 import { questions, questionsByTopic, topicsByPriority } from '@/lib/data';
 import { topicStats } from '@/lib/srs';
 import { useProgress } from '@/lib/useProgress';
@@ -11,6 +16,44 @@ import SearchBar from '@/components/SearchBar';
 import ThemeToggle from '@/components/ThemeToggle';
 import ExportImport from '@/components/ExportImport';
 import ProgressBar from '@/components/ProgressBar';
+
+interface Tool {
+  href: string;
+  label: string;
+  desc: string;
+  icon: LucideIcon;
+  accent?: boolean;
+}
+
+const TOOLS: { section: string; tools: Tool[] }[] = [
+  {
+    section: '📚 Estudiar',
+    tools: [
+      { href: '/plan/', label: 'Plan de 6 días', desc: 'Itinerario diario con bullets y deep-links.', icon: CalendarDays, accent: true },
+      { href: '/mix/', label: 'Repaso diario', desc: '20 cards aleatorias priorizando lo no visto y lo marcado.', icon: Shuffle },
+      { href: '/review/', label: 'Marcadas', desc: 'Cards que marcaste para repasar.', icon: RotateCcw },
+    ],
+  },
+  {
+    section: '🎯 Practicar',
+    tools: [
+      { href: '/mock/', label: 'Simulacro temático', desc: 'Conversación con drilling por bloque (hexagonal, Kafka, SQL…).', icon: MessageSquare, accent: true },
+      { href: '/simulacro/', label: 'Simulacro completo', desc: 'Entrevista cronometrada de principio a fin, mezclando temas.', icon: Timer },
+      { href: '/test/', label: 'Test (selección múltiple)', desc: 'Preguntas con 4 opciones y explicación tras responder.', icon: ListChecks },
+      { href: '/design/', label: 'Diseño', desc: '"Te doy unos requisitos, plantea la solución" con rúbrica.', icon: PenTool },
+    ],
+  },
+  {
+    section: '📖 Referencia',
+    tools: [
+      { href: '/teoria/', label: 'Teoría', desc: 'Resúmenes que atan los conceptos clave de cada bloque.', icon: BookOpen },
+      { href: '/chuletas/', label: 'Chuletas', desc: 'Puntos clave por bloque para el repaso de última hora.', icon: FileText },
+      { href: '/experiencia/', label: 'Tu experiencia', desc: 'Pitch, matriz de tech, trayectoria y preguntas para hacerles.', icon: UserRound },
+    ],
+  },
+];
+
+const WELCOME_KEY = 'interview-prep-welcome-v1';
 
 export default function Home() {
   const { progress, hydrated, reload } = useProgress();
@@ -25,6 +68,22 @@ export default function Home() {
   );
   const orderedTopics = topicsByPriority(knownPctById);
 
+  // First-visit welcome banner — dismissible, remembered in localStorage.
+  const [showWelcome, setShowWelcome] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.localStorage.getItem(WELCOME_KEY)) {
+      setShowWelcome(true);
+    }
+  }, []);
+  function dismissWelcome() {
+    setShowWelcome(false);
+    try {
+      window.localStorage.setItem(WELCOME_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
       <header className="mb-8">
@@ -34,7 +93,7 @@ export default function Home() {
               Interview Prep
             </h1>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Arquitectura · Spring · Java · Kafka · SQL · DDD — flashcards y quiz, offline.
+              Arquitectura · Spring · Java · Kafka · SQL · DDD — flashcards, quiz, simulacros, offline.
             </p>
           </div>
           <ThemeToggle />
@@ -43,72 +102,107 @@ export default function Home() {
         <SearchBar />
       </header>
 
+      {/* First-visit welcome */}
+      {showWelcome && (
+        <section className="relative mb-6 rounded-2xl border border-accent/30 bg-accent/5 p-5 dark:bg-accent/10">
+          <button
+            type="button"
+            onClick={dismissWelcome}
+            aria-label="Cerrar bienvenida"
+            className="absolute right-3 top-3 rounded p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          >
+            <X size={16} aria-hidden />
+          </button>
+          <p className="flex items-center gap-1.5 text-sm font-medium text-accent">
+            <Sparkles size={15} aria-hidden /> Empieza por aquí
+          </p>
+          <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-300">
+            La forma rápida: abre el <strong>Plan de 6 días</strong>, ve al día que toque y entra en
+            sus flashcards desde ahí. Reserva 20 min al final del día para el <strong>Repaso diario</strong>.
+            Cuando estés listo, prueba un <strong>Simulacro temático</strong> en voz alta. Tu progreso se
+            guarda en este navegador.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/plan/"
+              onClick={dismissWelcome}
+              className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              <CalendarDays size={14} aria-hidden /> Abrir Plan
+              <ChevronRight size={14} aria-hidden />
+            </Link>
+            <button
+              type="button"
+              onClick={dismissWelcome}
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-300"
+            >
+              Entendido
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Global progress */}
       <section className="mb-8 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-900">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Progreso global</h2>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            <CheckCircle2 size={15} aria-hidden /> Progreso global
+          </h2>
           <span className="text-sm text-zinc-500 dark:text-zinc-400">
             {hydrated ? `${totalKnown} / ${questions.length} conocidas · ${globalPct}%` : '…'}
           </span>
         </div>
         <ProgressBar value={totalKnown} max={questions.length} label="Progreso global" />
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Link
-            href="/plan/"
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
-          >
-            <CalendarDays size={15} aria-hidden /> Plan de estudio
-          </Link>
-          <Link
-            href="/mock/"
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
-          >
-            <MessageSquare size={15} aria-hidden /> Simulacro
-          </Link>
-          <Link
-            href="/simulacro/"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-          >
-            <Timer size={15} aria-hidden /> Simulacro completo
-          </Link>
-          <Link
-            href="/design/"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-          >
-            <PenTool size={15} aria-hidden /> Diseño
-          </Link>
-          <Link
-            href="/experiencia/"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-          >
-            <UserRound size={15} aria-hidden /> Tu experiencia
-          </Link>
-          <Link
-            href="/teoria/"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-          >
-            <BookOpen size={15} aria-hidden /> Teoría
-          </Link>
-          <Link
-            href="/chuletas/"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-          >
-            <FileText size={15} aria-hidden /> Chuletas
-          </Link>
-          <Link
-            href="/mix/"
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-200"
-          >
-            <Shuffle size={15} aria-hidden /> Repaso diario
-          </Link>
-          <Link
-            href="/review/"
-            className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-amber-950 transition hover:bg-amber-400"
-          >
-            <RotateCcw size={15} aria-hidden /> Marcadas ({totalReview})
-          </Link>
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-400 dark:text-zinc-500">
+          <span>{hydrated ? `${totalReview} marcadas para repasar` : ' '}</span>
           <ExportImport onImported={reload} />
+        </div>
+      </section>
+
+      {/* Tools — grouped */}
+      <section className="mb-10">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          Herramientas
+        </h2>
+        <div className="space-y-5">
+          {TOOLS.map((group) => (
+            <div key={group.section}>
+              <p className="mb-2 text-xs font-medium text-zinc-600 dark:text-zinc-300">{group.section}</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {group.tools.map((t) => {
+                  const Icon = t.icon;
+                  return (
+                    <Link
+                      key={t.href}
+                      href={t.href}
+                      className={`group flex items-start gap-3 rounded-2xl border p-4 transition hover:-translate-y-px hover:shadow ${
+                        t.accent
+                          ? 'border-accent/40 bg-accent/5 hover:border-accent dark:bg-accent/10'
+                          : 'border-zinc-200 bg-white hover:border-accent/60 dark:border-ink-700 dark:bg-ink-900'
+                      }`}
+                    >
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        t.accent ? 'bg-accent text-white' : 'bg-zinc-100 text-zinc-600 dark:bg-ink-800 dark:text-zinc-300'
+                      }`}>
+                        <Icon size={18} aria-hidden />
+                      </span>
+                      <div className="flex-1">
+                        <p className="flex items-center gap-1.5 font-medium text-zinc-900 dark:text-white">
+                          {t.label}
+                          {t.href === '/review/' && totalReview > 0 && (
+                            <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
+                              {totalReview}
+                            </span>
+                          )}
+                        </p>
+                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t.desc}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
