@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  BookOpen, CalendarDays, CheckCircle2, ChevronRight, FileText, HelpCircle, ListChecks,
-  MessageSquare, PenTool, RotateCcw, Shuffle, Sparkles, Timer, UserRound, X,
+  BookOpen, CalendarDays, CheckCircle2, ChevronRight, FileText, Flame, HelpCircle, ListChecks,
+  MessageSquare, PenTool, RotateCcw, Shuffle, Sparkles, Timer, Trophy, UserRound, X,
   type LucideIcon,
 } from 'lucide-react';
 import { questions, questionsByTopic, topicsByPriority } from '@/lib/data';
 import { topicStats } from '@/lib/srs';
 import { useProgress } from '@/lib/useProgress';
-import { getCard } from '@/lib/storage';
+import { getCard, loadUnlocked, saveUnlocked, tickStreak } from '@/lib/storage';
+import { computeStats, newlyUnlocked, unlockedAchievements, type Achievement } from '@/data/achievements';
 import TopicCard from '@/components/TopicCard';
 import SearchBar from '@/components/SearchBar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -49,7 +50,8 @@ const TOOLS: { section: string; tools: Tool[] }[] = [
       { href: '/teoria/', label: 'Teoría', desc: 'Resúmenes que atan los conceptos clave de cada bloque.', icon: BookOpen },
       { href: '/chuletas/', label: 'Chuletas', desc: 'Puntos clave por bloque para el repaso de última hora.', icon: FileText },
       { href: '/experiencia/', label: 'Tu experiencia', desc: 'Pitch, matriz de tech, trayectoria, puntos a vender/cubrir.', icon: UserRound },
-      { href: '/preguntas/', label: 'Preguntas para ellos', desc: 'Categorizadas (equipo, técnico, entrega, observabilidad, producto, crecimiento) + 5 esenciales.', icon: HelpCircle },
+      { href: '/preguntas/', label: 'Preguntas para ellos', desc: 'Categorizadas + 5 esenciales para hacer al entrevistador.', icon: HelpCircle },
+      { href: '/logros/', label: 'Logros', desc: 'Tu progreso gamificado: racha, logros desbloqueables, hitos.', icon: Trophy },
     ],
   },
 ];
@@ -76,6 +78,33 @@ export default function Home() {
       setShowWelcome(true);
     }
   }, []);
+
+  // Streak (días consecutivos) — tickea al cargar la home.
+  const [streak, setStreak] = useState(0);
+  // Toast de nuevos logros desbloqueados.
+  const [toast, setToast] = useState<Achievement[]>([]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const days = tickStreak();
+    setStreak(days);
+    // Detectar nuevos logros y persistirlos.
+    if (hydrated) {
+      const prev = loadUnlocked();
+      const stats = computeStats(progress, days, prev);
+      const news = newlyUnlocked(stats, prev);
+      if (news.length > 0) {
+        setToast(news);
+        const all = unlockedAchievements(stats).map((a) => a.id);
+        saveUnlocked(all);
+        // Auto-dismiss tras 6s.
+        setTimeout(() => setToast([]), 6000);
+      } else if (prev.length === 0) {
+        // Inicializa la lista si nunca se guardó.
+        const all = unlockedAchievements(stats).map((a) => a.id);
+        if (all.length > 0) saveUnlocked(all);
+      }
+    }
+  }, [hydrated, progress]);
   function dismissWelcome() {
     setShowWelcome(false);
     try {
@@ -97,11 +126,53 @@ export default function Home() {
               Arquitectura · Spring · Java · Kafka · SQL · DDD — flashcards, quiz, simulacros, offline.
             </p>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {hydrated && streak >= 1 && (
+              <Link
+                href="/logros/"
+                className="flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-900 transition hover:border-amber-400 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
+                aria-label={`Racha de ${streak} días`}
+                title={`Llevas ${streak} ${streak === 1 ? 'día' : 'días'} seguidos`}
+              >
+                <Flame size={15} aria-hidden /> {streak}
+              </Link>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
 
         <SearchBar />
       </header>
+
+      {/* Toast de logros recién desbloqueados */}
+      {toast.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 z-50 w-[min(360px,90vw)] -translate-x-1/2 space-y-2 print:hidden">
+          {toast.map((a) => (
+            <div
+              key={a.id}
+              className="flex items-start gap-3 rounded-2xl border border-emerald-300 bg-white px-4 py-3 shadow-lg dark:border-emerald-700 dark:bg-ink-900"
+              role="status"
+            >
+              <span className="text-2xl" aria-hidden>{a.emoji}</span>
+              <div className="flex-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                  ¡Logro desbloqueado!
+                </p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">{a.title}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{a.desc}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setToast((t) => t.filter((x) => x.id !== a.id))}
+                aria-label="Cerrar"
+                className="rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+              >
+                <X size={14} aria-hidden />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* First-visit welcome */}
       {showWelcome && (

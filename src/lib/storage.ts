@@ -3,6 +3,8 @@ import type { CardProgress, CardStatus, Progress } from './types';
 const KEY = 'interview-prep-progress-v1';
 const THEME_KEY = 'interview-prep-theme-v1';
 const PLAN_KEY = 'interview-prep-plan-v1';
+const STREAK_KEY = 'interview-prep-streak-v1';
+const ACH_KEY = 'interview-prep-achievements-v1';
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -68,6 +70,79 @@ export function saveTheme(theme: Theme): void {
   if (!isBrowser) return;
   try {
     window.localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---- Streak (racha de días consecutivos) ----
+
+interface StreakState {
+  lastDate: string; // YYYY-MM-DD
+  days: number;
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysBetween(a: string, b: string): number {
+  return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+}
+
+/** Llama esto al entrar en la home — actualiza la racha y la devuelve. */
+export function tickStreak(): number {
+  if (!isBrowser) return 0;
+  const today = todayStr();
+  try {
+    const raw = window.localStorage.getItem(STREAK_KEY);
+    const prev: StreakState = raw ? JSON.parse(raw) : { lastDate: '', days: 0 };
+
+    if (prev.lastDate === today) return prev.days; // ya contado hoy
+
+    const gap = prev.lastDate ? daysBetween(prev.lastDate, today) : 999;
+    let days: number;
+    if (gap === 1) days = prev.days + 1; // día siguiente → +1
+    else days = 1; // primera visita o se rompió la racha → 1
+
+    window.localStorage.setItem(STREAK_KEY, JSON.stringify({ lastDate: today, days }));
+    return days;
+  } catch {
+    return 0;
+  }
+}
+
+export function readStreak(): number {
+  if (!isBrowser) return 0;
+  try {
+    const raw = window.localStorage.getItem(STREAK_KEY);
+    if (!raw) return 0;
+    const s: StreakState = JSON.parse(raw);
+    // Si ha pasado más de 1 día, la racha está rota — se reseteará al próximo tickStreak.
+    const gap = daysBetween(s.lastDate, todayStr());
+    if (gap > 1) return 0;
+    return s.days;
+  } catch {
+    return 0;
+  }
+}
+
+// ---- Achievements desbloqueados ----
+
+export function loadUnlocked(): string[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = window.localStorage.getItem(ACH_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveUnlocked(ids: string[]): void {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.setItem(ACH_KEY, JSON.stringify(ids));
   } catch {
     /* ignore */
   }
