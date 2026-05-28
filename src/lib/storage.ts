@@ -5,6 +5,8 @@ const THEME_KEY = 'interview-prep-theme-v1';
 const PLAN_KEY = 'interview-prep-plan-v1';
 const STREAK_KEY = 'interview-prep-streak-v1';
 const ACH_KEY = 'interview-prep-achievements-v1';
+const MCQ_FAILED_KEY = 'interview-prep-mcq-failed-v1';
+const MCQ_SKIPPED_KEY = 'interview-prep-mcq-skipped-v1';
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -167,6 +169,34 @@ export function savePlanDone(days: number[]): void {
   } catch {
     /* ignore */
   }
+}
+
+// ---- MCQ failed / skipped (persist across sessions) ----
+
+export function loadMcqFailed(): string[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = window.localStorage.getItem(MCQ_FAILED_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch { return []; }
+}
+
+export function saveMcqFailed(ids: string[]): void {
+  if (!isBrowser) return;
+  try { window.localStorage.setItem(MCQ_FAILED_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
+}
+
+export function loadMcqSkipped(): string[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = window.localStorage.getItem(MCQ_SKIPPED_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch { return []; }
+}
+
+export function saveMcqSkipped(ids: string[]): void {
+  if (!isBrowser) return;
+  try { window.localStorage.setItem(MCQ_SKIPPED_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
 }
 
 // ---- Export / Import ----
