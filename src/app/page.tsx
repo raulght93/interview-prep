@@ -17,6 +17,7 @@ import SearchBar from '@/components/SearchBar';
 import ThemeToggle from '@/components/ThemeToggle';
 import ExportImport from '@/components/ExportImport';
 import ProgressBar from '@/components/ProgressBar';
+import CloudSync from '@/components/CloudSync';
 
 interface Tool {
   href: string;
@@ -229,6 +230,14 @@ export default function Home() {
           <span>{hydrated ? `${totalReview} marcadas para repasar` : ' '}</span>
           <ExportImport onImported={reload} />
         </div>
+        {hydrated && (
+          <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-ink-700">
+            <p className="mb-2 text-[0.7rem] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              ☁ Sincronización en nube
+            </p>
+            <CloudSync onRestored={reload} />
+          </div>
+        )}
       </section>
 
       {/* Tools — grouped */}

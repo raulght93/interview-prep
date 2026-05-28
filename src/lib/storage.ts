@@ -199,6 +199,45 @@ export function saveMcqSkipped(ids: string[]): void {
   try { window.localStorage.setItem(MCQ_SKIPPED_KEY, JSON.stringify(ids)); } catch { /* ignore */ }
 }
 
+// ---- Cloud sync: collect / restore all state ----
+
+export interface AllProgress {
+  progress: Progress;
+  mcqFailed: string[];
+  mcqSkipped: string[];
+  streak: unknown;
+  achievements: string[];
+  planDone: number[];
+}
+
+/** Collects all syncable state from localStorage into one object. */
+export function collectAllProgress(): AllProgress {
+  if (!isBrowser) return { progress: {}, mcqFailed: [], mcqSkipped: [], streak: null, achievements: [], planDone: [] };
+  let streak: unknown = null;
+  try { streak = JSON.parse(window.localStorage.getItem(STREAK_KEY) ?? 'null'); } catch { /* ignore */ }
+  return {
+    progress: loadProgress(),
+    mcqFailed: loadMcqFailed(),
+    mcqSkipped: loadMcqSkipped(),
+    streak,
+    achievements: loadUnlocked(),
+    planDone: loadPlanDone(),
+  };
+}
+
+/** Restores all syncable state from a cloud snapshot. */
+export function restoreAllProgress(data: Partial<AllProgress>): void {
+  if (!isBrowser) return;
+  try {
+    if (data.progress) saveProgress(data.progress);
+    if (data.mcqFailed) saveMcqFailed(data.mcqFailed);
+    if (data.mcqSkipped) saveMcqSkipped(data.mcqSkipped);
+    if (data.streak) window.localStorage.setItem(STREAK_KEY, JSON.stringify(data.streak));
+    if (data.achievements) saveUnlocked(data.achievements);
+    if (data.planDone) savePlanDone(data.planDone);
+  } catch { /* ignore */ }
+}
+
 // ---- Export / Import ----
 
 export function exportProgress(): string {
