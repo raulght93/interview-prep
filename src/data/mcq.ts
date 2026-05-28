@@ -1380,6 +1380,83 @@ MCQ.push(
   },
 );
 
+// ===== Cuarta tanda: ampliación de seguridad (Keycloak, authN/authZ, Spring Security) =====
+
+MCQ.push(
+  {
+    id: 'mcq-sec-5', topicId: 'sec',
+    question: '¿Cuál es la diferencia entre autenticación y autorización?',
+    options: [
+      'Son sinónimos: ambos validan al usuario.',
+      'Autenticación = ¿quién eres? (401 si falla). Autorización = ¿qué puedes hacer? (403 si te falta permiso).',
+      'Autenticación es solo para frontend; autorización solo para backend.',
+      'Autenticación es para usuarios humanos; autorización es para máquinas.',
+    ],
+    correctIndex: 1,
+    explanation: '**AuthN** verifica identidad → 401 si no eres quien dices. **AuthZ** comprueba permisos sobre acciones/recursos → 403 si no te dejan. Siempre se hace authN antes que authZ. El bug clásico de "IDOR" es authN OK + authZ ausente.',
+  },
+  {
+    id: 'mcq-sec-6', topicId: 'sec',
+    question: 'OIDC vs OAuth2: ¿cuál es la relación correcta?',
+    options: [
+      'OIDC es un competidor de OAuth2 que lo sustituye.',
+      'OAuth2 es solo para login; OIDC para acceso a APIs.',
+      'OIDC es una capa de identidad SOBRE OAuth2: añade un `id_token` (JWT) que prueba la identidad del usuario. Es lo que usas para "login con Google", etc.',
+      'Son protocolos para sistemas completamente diferentes.',
+    ],
+    correctIndex: 2,
+    explanation: 'OAuth2 = autorización delegada (access token a APIs). OIDC añade `id_token` con la identidad del usuario → resuelve el LOGIN. Los flujos OIDC son los de OAuth2 (Authorization Code + PKCE). "Iniciar sesión con X" = OIDC.',
+  },
+  {
+    id: 'mcq-sec-7', topicId: 'sec',
+    question: 'En Keycloak, ¿qué es un realm?',
+    options: [
+      'El nombre del servidor donde está desplegado.',
+      'Un tenant aislado: tiene sus propios usuarios, clients, roles y políticas. Una empresa puede tener uno para empleados y otro para clientes.',
+      'Un tipo de protocolo (OIDC/SAML).',
+      'El proveedor de identidad externo (LDAP, Google).',
+    ],
+    correctIndex: 1,
+    explanation: 'Un **realm** = tenant. Aislado, con sus propios usuarios, clients (apps), roles, groups, identity providers. Realms distintos no comparten nada salvo el master realm administrativo. El Proveedor de Identidad es algo distinto (federación).',
+  },
+  {
+    id: 'mcq-sec-8', topicId: 'sec',
+    question: '¿Por qué NO se deben usar MD5 o SHA-256 para guardar contraseñas?',
+    options: [
+      'No están disponibles en Java estándar.',
+      'Solo funcionan para texto en inglés.',
+      'Son demasiado rápidos: un atacante con la BD filtrada puede hacer billones de hashes/seg en GPU y crackear passwords débiles. Necesitas funciones lentas y memory-hard: bcrypt, Argon2, scrypt.',
+      'No producen hashes únicos.',
+    ],
+    correctIndex: 2,
+    explanation: 'MD5/SHA-* están diseñados para ser **rápidos** (lo opuesto a lo que quieres para passwords). Usa bcrypt (cost factor 12+), **Argon2** (recomendado nuevo: ganador del PHC, memory-hard) o scrypt. Spring Security: `BCryptPasswordEncoder`/`Argon2PasswordEncoder`.',
+  },
+  {
+    id: 'mcq-sec-9', topicId: 'sec',
+    question: '¿Cuándo elegirías ABAC sobre RBAC?',
+    options: [
+      'Cuando los roles del sistema son fijos y claros (admin/user/viewer).',
+      'Cuando las reglas dependen del contexto y atributos (hora, propietario del recurso, departamento, MFA activo), no solo del rol.',
+      'Cuando hay muchos usuarios.',
+      'ABAC es siempre la mejor opción.',
+    ],
+    correctIndex: 1,
+    explanation: 'RBAC (roles + permisos) es simple y suficiente cuando los permisos son uniformes. **ABAC** modela reglas con **atributos del sujeto/recurso/acción/contexto** ("el dueño del pedido", "solo en horario laboral"). Implementación moderna: Open Policy Agent (OPA) + Rego.',
+  },
+  {
+    id: 'mcq-sec-10', topicId: 'sec',
+    question: 'Sobre WebAuthn / passkeys (FIDO2), ¿qué afirmación es correcta?',
+    options: [
+      'Es solo otra forma de OTP por SMS.',
+      'Resuelve el problema de phishing por construcción: la clave firma un challenge ligado al ORIGEN real, así un sitio falso no obtiene una firma válida.',
+      'Requiere SMS para funcionar.',
+      'Es más débil que TOTP.',
+    ],
+    correctIndex: 1,
+    explanation: 'WebAuthn usa criptografía de clave pública con el origen ligado al challenge → **phishing-resistant**. Mucho más fuerte que SMS/TOTP/push. Es el camino al "sin contraseñas" (passkeys). Keycloak lo soporta nativo.',
+  },
+);
+
 export function mcqByTopic(topicId: string): McqQuestion[] {
   return MCQ.filter((q) => q.topicId === topicId);
 }
