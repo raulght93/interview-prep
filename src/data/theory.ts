@@ -108,6 +108,90 @@ Las **preguntas trampa** clásicas con números. *Tabla A(5) LEFT JOIN B(10): ¿
 **Antipatrones a evitar.** **Anemic Domain Model** (entidades con getters/setters y toda la lógica en servicios — no es OO ni DDD). **God class**, **shotgun surgery**, **feature envy**. **Primitive obsession**: pasar \`String\`/\`Long\` para todo en vez de value objects (\`Email\`, \`Dinero\`). **Service locator** disfrazando dependencias. **Premature optimization** y **over-engineering** (abstracciones que solo tienen una implementación). **Distributed monolith**: microservicios acoplados síncronos en cadena — todo lo malo de monolito y de distribuido a la vez.`,
   },
   {
+    topicId: 'java21',
+    body: `**Java 21 es LTS** y el punto de referencia del ecosistema en 2025. Las novedades se agrupan en tres categorías: nuevas abstracciones de datos, pattern matching avanzado y un nuevo modelo de concurrencia.
+
+**Records** (Java 16 estable): clases inmutables con constructor canónico, getters, equals, hashCode y toString generados automáticamente. Ideales para DTOs y Value Objects. El constructor compacto permite validación sin repetir los campos. Los **Record Patterns** (Java 21) permiten desestructurar records directamente en \`instanceof\` y \`switch\`: \`if (obj instanceof Punto(var x, var y)) { ... }\`.
+
+**Sealed Classes** (Java 17): declaran explícitamente sus subclases con \`permits\`. El compilador verifica **exhaustividad** en \`switch\` expressions: si no cubres todos los casos, error en compilación. Combinado con records dan un ADT (Algebraic Data Type) completo: \`sealed interface Resultado permits ResultadoOk, ResultadoError, ResultadoPendiente {}\`. Modela results/errors tipados sin excepciones.
+
+**Pattern Matching** ha evolucionado mucho: \`instanceof\` con variable de binding (Java 16), switch expressions con patrones y **guarded patterns** (\`when\`): \`case ResultadoError err when err.critico() -> ...\`. Se puede desestructurar, combinar condiciones y manejar \`null\` como un case más.
+
+**Virtual Threads** (Project Loom, Java 21 estable): threads ligeros gestionados por la JVM (~KB vs ~MB de platform threads). Cuando hacen I/O bloqueante, la JVM los **desmonta** del carrier thread sin bloquearlo — otro VT puede ejecutarse. El código sigue siendo síncrono e imperativo (no hay Mono, no hay callbacks). Con Spring Boot 3.2+: \`spring.threads.virtual.enabled=true\`. Maneja miles de concurrentes con JDBC estándar. El único antipatrón: \`synchronized\` dentro de un VT causa **pinning** (el VT no puede desmontarse); usar \`ReentrantLock\` en su lugar. \`StructuredConcurrency\` (preview) gestiona tareas concurrentes relacionadas en un scope con cancelación automática y sin thread leaks, superando las limitaciones de \`CompletableFuture\`.
+
+**Secuenced Collections** (Java 21): nueva interfaz con \`getFirst()\`, \`getLast()\`, \`addFirst()\`, \`addLast()\`, \`reversed()\` para listas, deques y mapas con orden definido.`,
+  },
+  {
+    topicId: 'webflux',
+    body: `**Spring WebFlux** es el framework reactivo de Spring, basado en **Project Reactor** (\`Mono<T>\` y \`Flux<T>\`). Se ejecuta sobre Netty con un event loop: pocos threads del OS gestionan miles de conexiones porque ninguno queda bloqueado esperando I/O. Toda la cadena de procesamiento debe ser non-blocking; bloquear en el event loop es el **antipatrón más grave**.
+
+**Mono** emite 0 o 1 elemento (equivale a \`Optional<T>\` async). **Flux** emite 0 a N (equivale a \`Stream<T>\` async). Ambos son **cold** (lazy): nada ocurre hasta que alguien se suscribe. Diferencia clave de operadores: \`map\` = transformación síncrona T→R; \`flatMap\` = transformación async T→Mono/Flux (aplana el resultado). Si tu transformación hace I/O o devuelve un publisher, es \`flatMap\`. \`switchMap\` cancela la suscripción anterior (búsquedas, autocompletar); \`concatMap\` respeta el orden (secuencial); \`mergeMap\` paralelo sin orden. Para errores: \`onErrorReturn\`, \`onErrorResume\`, \`onErrorMap\`, \`retry\`, \`retryWhen(Retry.backoff(...))\`, \`timeout\`. Para efectos secundarios sin transformar: \`doOnNext\`, \`doOnError\`, \`doFinally\`.
+
+**Schedulers** controlan en qué thread pool se ejecuta el trabajo. \`publishOn\` cambia el thread para los operadores DESPUÉS. \`subscribeOn\` afecta al source. Para código bloqueante (JDBC) que se debe ejecutar en WebFlux: \`Mono.fromCallable(() -> jdbcCall()).subscribeOn(Schedulers.boundedElastic())\`. \`boundedElastic\` es un pool elástico para I/O bloqueante. \`parallel\` para CPU-intensive.
+
+**Backpressure**: el consumidor señala al productor la velocidad a la que puede procesar, evitando saturación. Configurable con \`onBackpressureBuffer\`, \`onBackpressureDrop\`, \`onBackpressureLatest\`. En la práctica, la mayoría de fuentes reactivas (WebClient, R2DBC) la gestionan automáticamente. **WebClient** reemplaza \`RestTemplate\` en WebFlux: fluido, composable, con \`retrieve().onStatus(...).bodyToMono(...)\`.
+
+**R2DBC** es la alternativa reactiva a JDBC. Las operaciones devuelven Mono/Flux. \`ReactiveCrudRepository\` proporciona los mismos métodos que \`JpaRepository\` pero reactivos. Las transacciones se gestionan via \`@Transactional\` con \`ReactiveTransactionManager\`. **Testing** con \`StepVerifier\`: \`StepVerifier.create(mono).expectNext(...).verifyComplete()\`. Para tiempos virtuales: \`withVirtualTime\`.
+
+**WebFlux vs Virtual Threads** (la pregunta de 2025): VTs son más simples (código síncrono, debugging normal, todo el ecosistema JDBC/Hibernate) y ofrecen rendimiento equivalente para la mayoría de apps I/O-bound. WebFlux sigue ganando cuando necesitas **backpressure real**, SSE/WebSockets de alta concurrencia, o ya tienes un ecosistema 100% reactivo.`,
+  },
+  {
+    topicId: 'react',
+    body: `**React 18** introduce el modo concurrente: el motor puede interrumpir renders para priorizar actualizaciones urgentes. \`useTransition\` marca una actualización como no urgente (\`startTransition(() => setQuery(...))\`). \`useDeferredValue\` pospone actualizaciones de valores para mantener la UI responsiva. El **Automatic Batching** agrupa todas las actualizaciones de estado (incluso en setTimeout o fetch) en un solo re-render.
+
+Los **hooks** son el modelo mental central. \`useState\`/\`useReducer\` para estado local; \`useRef\` para referencias mutables sin re-render; \`useMemo\` para memoizar cálculos costosos; \`useCallback\` para memoizar funciones (evitar que referencias nuevas rompan comparaciones en hijos memoizados); \`useEffect\` para sincronizar con sistemas externos. **Regla de oro de useEffect**: si no necesitas el DOM ni sistemas externos, no lo uses. La función de limpieza previene memory leaks. **Custom hooks** (empiezan con \`use\`) encapsulan lógica reutilizable.
+
+**React.memo** evita re-renders si las props no cambian (comparación shallow). Para comparaciones deep, segundo argumento: \`(prev, next) => isEqual(prev.properties, next.properties)\`. **Lazy loading**: \`React.lazy(() => import('./Component'))\` + \`<Suspense fallback={<Skeleton />}>\`. En Next.js: \`next/dynamic(..., { ssr: false })\`.
+
+**Next.js App Router** (v14+): todo es **Server Component** por defecto (corre en el servidor, sin JS en el cliente, puede fetchear datos directamente). Marcar con \`'use client'\` solo lo que necesita interactividad o browser APIs. Server Components no tienen state ni effects. Estructura de carpetas: \`layout.tsx\`, \`page.tsx\`, \`loading.tsx\`, \`error.tsx\`, \`route.ts\`. Route groups (\`(pages)\`) sin efecto en URL. Dynamic routes con \`[id]\`. Prefetching con TanStack Query: en el Server Component \`await queryClient.prefetchQuery(options)\` → \`dehydrate(queryClient)\` → \`<HydrationBoundary state={dehydrated}>\` — los datos están en cache al montar el componente cliente, sin doble fetch.
+
+**Middleware** (\`middleware.ts\`): intercepta requests antes de responder. Auth con next-auth v5: valida JWT del proveedor Keycloak, redirige a login si no autenticado o si el token de refresh falló. El JWT callback renueva el access_token con el refresh_token cuando caduca. Config con \`matcher\` para excluir rutas públicas y assets.
+
+**Design System** con Radix UI (lógica + a11y sin estilos) + CVA (class-variance-authority para variantes Tailwind) + \`cn\` (clsx + tailwind-merge). Separación server/client: componentes sin estado (Button, Input) en \`@ds/server\`, interactivos (Dialog, Select, Toast) en \`@ds/client\`. El patrón \`asChild\` (Slot de Radix) renderiza el child como elemento raíz con las props del padre — permite \`<Button asChild><Link href="...">...</Link></Button>\`.`,
+  },
+  {
+    topicId: 'angular',
+    body: `**Angular** es un framework opinionado con DI jerárquico, Change Detection y un router con lazy loading. El orden de los lifecycle hooks importa: \`constructor\` (solo DI, no lógica), \`ngOnChanges\` (cuando cambia un @Input), \`ngOnInit\` (inicialización real, @Inputs disponibles), \`ngAfterViewInit\` (DOM disponible, @ViewChild accesible), \`ngOnDestroy\` (cleanup: unsubscribe, timers).
+
+**Change Detection**: Default verifica todo el árbol en cada evento. **OnPush** solo verifica el componente cuando cambia una referencia de @Input, hay un evento local, el async pipe emite, o se llama \`markForCheck()\`. Requiere objetos inmutables (no mutar, crear nuevos). **NgRx + OnPush** es el combo estándar porque el store siempre devuelve objetos nuevos. **Signals** (Angular 17+): primitivos reactivos que solo actualizan los bindings que los consumen. \`signal(0)\`, \`computed(() => x() * 2)\`, \`effect(() => log(x()))\`.
+
+**DI jerárquico**: \`providedIn: 'root'\` → singleton global, tree-shakeable. \`providers: [...]\` en @Component → instancia propia, se destruye con el componente. \`inject()\` function (Angular 14+): usar fuera del constructor (guards, factories). Tokens: \`InjectionToken<T>\` para valores no-clase y \`HTTP_INTERCEPTORS\` multi-token.
+
+**Router**: rutas lazy con \`loadChildren: () => import('./module').then(m => m.ROUTES)\`. Guards funcionales con \`inject()\`: \`export const authGuard: CanActivateFn = () => inject(AuthService).isAuth() || inject(Router).createUrlTree(['/login'])\`. Resolvers precarga datos antes de activar la ruta. \`ActivatedRoute.snapshot.data['key']\` para leer datos resueltos. \`canDeactivate\` para prevenir salida con cambios sin guardar.
+
+**Reactive Forms**: FormGroup + FormBuilder. Validators síncronos inline (\`Validators.required, Validators.pattern\`) y async (\`AsyncValidatorFn\`, debounce con \`switchMap\`). \`valueChanges\` es un Observable: combina con \`debounceTime\`, \`distinctUntilChanged\`, \`switchMap\` para autocompletar, validación lazy o efectos secundarios. \`markAllAsTouched()\` para mostrar todos los errores al hacer submit.
+
+**HTTP Interceptors** (funcionales, Angular 15+): \`HttpInterceptorFn = (req, next) => {...}\`. Para refresh de token: cuando llega 401, llamar a \`authService.refreshToken()\`, y con \`switchMap\` reintentar el request original con el nuevo token. Si el refresh falla, logout. **Memory leaks**: antipatrón = \`subscribe\` sin cleanup. Soluciones: \`takeUntilDestroyed(this.destroyRef)\` (Angular 16+, recomendado), \`async\` pipe (gestión automática), o patrón clásico \`destroy$ = new Subject()\` + \`takeUntil\`.`,
+  },
+  {
+    topicId: 'flink',
+    body: `**Apache Flink** es un motor de procesamiento de streams de estado distribuido con soporte nativo para **CEP** (Complex Event Processing), ventanas complejas y garantías exactly-once. Es la elección cuando necesitas correlación temporal de eventos o estado de procesamiento grande que no cabe en memoria. En Agata Next se usa con 1 JobManager + 6 TaskManagers × 19 slots = 114 slots totales, estado en RocksDB y checkpoints cada 30s.
+
+**Arquitectura**: el **JobManager** compila el DAG del job y coordina la ejecución. Los **TaskManagers** ejecutan las tareas con sus slots. Un slot puede ejecutar múltiples tareas del mismo pipeline (slot sharing). El **paralelismo** define cuántas instancias paralelas tiene un operador. DataStream API: \`source → keyBy → window/process → sink\`. El source de Kafka asigna un timestamp y watermark a cada evento.
+
+**Event Time vs Processing Time**: event time usa el timestamp del evento (cuándo ocurrió), processing time usa el reloj de Flink (cuándo llegó). Para análisis temporales correctos usar event time. Los **watermarks** son señales que garantizan que no llegarán eventos anteriores a T: permiten cerrar ventanas aunque lleguen eventos desordenados. \`forBoundedOutOfOrderness(Duration.ofSeconds(5))\` tolera hasta 5s de retraso. Los eventos más tardíos van a un side output o se descartan.
+
+**Ventanas**: Tumbling (fijas sin solapamiento), Sliding (solapadas: tamaño + slide), Session (por inactividad: se cierran si no hay eventos en N ms), Global (con trigger explícito). Funciones: \`reduce\` (incremental, eficiente), \`aggregate\` (estado intermedio explícito), \`process\` (acceso al contexto, timestamps, side outputs).
+
+**CEP**: \`Pattern.begin("a").where(...).followedBy("b").where(...).within(Duration)\` define patrones temporales. \`CEP.pattern(stream.keyBy(...), patron)\` aplica el patrón. \`patternStream.select(match -> ...)\` extrae los eventos que coinciden. Soporta cuantificadores (\`times\`, \`greedy\`), patrones negados (\`notFollowedBy\`), y condiciones que referencian eventos anteriores del patrón.
+
+**Estado y tolerancia a fallos**: \`ValueState\`, \`ListState\`, \`MapState\` por clave (necesita \`keyBy\` antes). Declarar en \`open()\`, nunca en el constructor. State backend **RocksDB** para estado > RAM: persistente en disco, incrementally checkpointable. **Checkpoints** (periódicos, automáticos) + **Savepoints** (manuales, para upgrades). Exactly-once end-to-end con Kafka: offsets del source en el checkpoint + sink transaccional (\`EXACTLY_ONCE\` + \`setTransactionalIdPrefix\`). El Flink Kubernetes Operator gestiona \`FlinkDeployment\` CRDs con \`upgradeMode: savepoint\` para upgrades sin pérdida de estado.`,
+  },
+  {
+    topicId: 'cicd',
+    body: `**IaC (Infrastructure as Code)** gestiona la infraestructura mediante archivos versionados en Git, dando reproducibilidad, auditoría y rollback. Dos categorías: **provisioning** (crear la infra: VMs, redes, cluster) y **configuration** (configurar lo que existe: instalar software, desplegar servicios).
+
+**OpenTofu/Terraform** es el estándar de provisioning declarativo. Describes el estado deseado, \`plan\` muestra el diff y \`apply\` lo aplica. El **state** guarda el estado actual (remote backend en S3/MinIO para trabajo en equipo + locking para evitar applies concurrentes). Bloques clave: \`resource\` (infraestructura), \`variable\` (inputs parametrizables), \`locals\` (valores calculados), \`output\` (exports), \`module\` (reutilización). Ciclo: \`init → plan → apply → destroy\`. En Agata se usa para provisionar VMs en Proxmox y el cluster RKE2.
+
+**Ansible** es el estándar de configuration management. Sin agente, usa SSH. Playbooks YAML con tareas idempotentes (ejecutar dos veces da el mismo resultado). **Roles** encapsulan tasks + handlers + templates. El módulo \`template\` con Jinja2 genera configuraciones dinámicas. Los **handlers** se disparan con \`notify\` solo si la tarea cambió algo (ej: "restart rke2"). Inventarios estáticos (INI/YAML) o dinámicos.
+
+**Jenkins** es el servidor CI/CD más extendido en enterprise Java. **Jenkinsfile declarativo**: \`pipeline { agent { docker {...} } stages { stage('Build') { steps {...} } } post { failure { emailext ... } } }\`. Etapas paralelas con \`parallel\`. Variables de entorno con \`credentials()\` (secrets de Jenkins). \`waitForQualityGate abortPipeline: true\` detiene el pipeline si SonarQube no aprueba. **Shared Libraries** para reutilizar código Groovy entre pipelines del mismo equipo. **Multibranch Pipeline**: pipeline automático por rama detectando el Jenkinsfile.
+
+**SonarQube** analiza estáticamente bugs, vulnerabilidades, code smells y cobertura (vía JaCoCo). El **Quality Gate** es un conjunto de umbrales (cobertura nueva ≥ 80%, 0 bugs críticos). Si no se supera, el pipeline se aborta. Integración Maven con \`sonar:sonar -Dsonar.token\`. Configuración en \`sonar-project.properties\` o propiedades Maven. \`@SuppressWarnings("java:SXXXX")\` para suprimir reglas específicas con justificación.
+
+**GitOps** = infraestructura y despliegue declarados en Git, sincronizados automáticamente por herramientas (ArgoCD, Flux). Ningún cambio manual en producción: todo via PR. El cluster converge hacia el estado del repositorio. Auditabilidad completa. ArgoCD detecta divergencias y puede alertar o autocorregir.`,
+  },
+  {
     topicId: 'obs',
     body: `**Observabilidad** es la capacidad de entender qué le pasa a tu sistema en producción **desde fuera**, sin desplegar de nuevo. Tres pilares: **métricas**, **logs** y **traces**. Las **métricas** son valores numéricos agregados en el tiempo (counter, gauge, histogram). Son baratas, agregables y perfectas para alertas y dashboards. **Prometheus** + **Micrometer** es el stack típico en Spring; cuidado con la cardinalidad de etiquetas — nunca \`userId\` o \`traceId\` como tag. Usa percentiles (p95, p99) en latencias, no medias.
 
