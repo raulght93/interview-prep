@@ -170,6 +170,7 @@ export default function TestPage() {
           onNext={() => commitAnswer(picked, false)}
           onSkip={() => commitAnswer(null, true)}
           correctSoFar={results.filter((r) => r.correct).length}
+          skippedSoFar={results.filter((r) => r.skipped).length}
         />
       )}
 
@@ -348,7 +349,7 @@ function ModeButton({
 
 function Player({
   q, idx, total, picked, revealed,
-  onPick, onSubmit, onNext, onSkip, correctSoFar,
+  onPick, onSubmit, onNext, onSkip, correctSoFar, skippedSoFar,
 }: {
   q: McqQuestion;
   idx: number;
@@ -360,6 +361,7 @@ function Player({
   onNext: () => void;
   onSkip: () => void;
   correctSoFar: number;
+  skippedSoFar: number;
 }) {
   const topic = getTopic(q.topicId);
   return (
@@ -369,7 +371,7 @@ function Player({
           <span>{topic?.emoji} {topic?.name}</span>
           <span>{idx + 1} de {total} · {correctSoFar} aciertos</span>
         </div>
-        <ProgressBar value={idx} max={total} label="Progreso del test" />
+        <ProgressBar value={idx} max={total} skipped={skippedSoFar} label="Progreso del test" />
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-900 sm:p-6">

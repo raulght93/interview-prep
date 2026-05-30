@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, SkipForward, X } from 'lucide-react';
 import type { Question } from '@/lib/types';
 import Markdown from './Markdown';
 
@@ -10,11 +10,13 @@ export default function QuizQuestion({
   index,
   total,
   onAnswer,
+  onSkip,
 }: {
   question: Question;
   index: number;
   total: number;
   onAnswer: (correct: boolean) => void;
+  onSkip?: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
   const [note, setNote] = useState('');
@@ -42,13 +44,25 @@ export default function QuizQuestion({
             className="w-full resize-y rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-accent dark:border-ink-600 dark:bg-ink-800 dark:text-zinc-100"
             placeholder="Tu respuesta…"
           />
-          <button
-            type="button"
-            onClick={() => setRevealed(true)}
-            className="mt-4 rounded-lg bg-accent px-4 py-2 font-medium text-white transition hover:opacity-90"
-          >
-            Ver respuesta
-          </button>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setRevealed(true)}
+              className="rounded-lg bg-accent px-4 py-2 font-medium text-white transition hover:opacity-90"
+            >
+              Ver respuesta
+            </button>
+            {onSkip && (
+              <button
+                type="button"
+                onClick={onSkip}
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition hover:border-accent hover:text-accent dark:border-ink-600 dark:text-zinc-400"
+                title="Saltar esta pregunta"
+              >
+                <SkipForward size={15} aria-hidden /> Saltar
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="mt-6 animate-fade-scale">

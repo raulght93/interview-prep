@@ -203,6 +203,172 @@ Los **traces** son el viaje de una petición por varios servicios, representado 
 
 **SLI/SLO/SLA.** SLI es la métrica (latencia, disponibilidad); SLO es tu objetivo interno ("99.9% < 200ms en 30 días"); SLA el contrato externo con consecuencias. El **error budget** (1 - SLO) define cuánto error te permites gastar; si te lo gastas, congelas releases y priorizas fiabilidad. Es el contrapeso entre velocidad y estabilidad — el lenguaje SRE para decidir cuándo seguir entregando y cuándo invertir en infra.`,
   },
+  {
+    topicId: 'redux',
+    body: `**Redux** es un gestor de estado global predecible: **una sola fuente de verdad** (el store), estado **inmutable** y cambios solo mediante **acciones puras**. El flujo es unidireccional: UI dispara una acción → el reducer (función pura) calcula el nuevo estado → el store notifica a los suscriptores.
+
+**Redux Toolkit (RTK)** es la forma oficial moderna. \`createSlice\` genera actions + reducer en un bloque, usando **Immer** internamente (puedes escribir código "mutante" y RTK lo convierte a actualizaciones inmutables):
+\`\`\`ts
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { value: 0 },
+  reducers: {
+    increment: (state) => { state.value += 1 },  // Immer: OK mutar el draft
+    addAmount: (state, action: PayloadAction<number>) => {
+      state.value += action.payload;
+    },
+  },
+});
+export const { increment, addAmount } = counterSlice.actions;
+\`\`\`
+
+**createAsyncThunk** maneja acciones asíncronas con estados \`pending/fulfilled/rejected\` automáticos:
+\`\`\`ts
+const fetchUser = createAsyncThunk('users/fetch', async (id: string) => {
+  const res = await api.getUser(id);
+  return res.data; // → action fulfilled con este payload
+});
+// En el slice:
+extraReducers: (builder) => {
+  builder.addCase(fetchUser.pending, (state) => { state.loading = true })
+         .addCase(fetchUser.fulfilled, (state, action) => {
+           state.user = action.payload; state.loading = false;
+         })
+         .addCase(fetchUser.rejected, (state, action) => {
+           state.error = action.error.message; state.loading = false;
+         });
+},
+\`\`\`
+
+**createSelector** (Reselect) memoiza selectores derivados: solo recalcula si cambian los inputs. Evita re-renders innecesarios por objetos nuevos en cada acceso.
+
+**RTK Query** es una capa de data fetching integrada: define endpoints, genera hooks (\`useGetUserQuery\`, \`useCreateUserMutation\`) con cache, loading states, invalidación y refetch automáticos. Elimina la necesidad de \`createAsyncThunk\` para peticiones API estándar.
+
+**Cuándo usar Redux vs Context**: Context es suficiente para estado de UI poco frecuente (tema, idioma). Redux aporta valor cuando tienes: estado complejo con muchos actores, necesitas DevTools/time-travel, o el estado se actualiza frecuentemente desde múltiples componentes sin relación directa.`,
+  },
+  {
+    topicId: 'ngrx',
+    body: `**NgRx** implementa el patrón Redux para Angular con integración de RxJS. El flujo es: componente dispara **Action** → **Reducer** actualiza el **Store** (inmutablemente) → **Selector** deriva vista del estado → **Effect** maneja side effects (I/O) y dispara nuevas acciones.
+
+\`\`\`ts
+// Actions
+const loadUsers = createAction('[Users] Load Users');
+const loadUsersSuccess = createAction('[Users] Load Success', props<{ users: User[] }>());
+const loadUsersFailure = createAction('[Users] Load Failure', props<{ error: string }>());
+
+// Reducer
+const usersReducer = createReducer(
+  initialState,
+  on(loadUsers, (state) => ({ ...state, loading: true })),
+  on(loadUsersSuccess, (state, { users }) => ({ ...state, users, loading: false })),
+  on(loadUsersFailure, (state, { error }) => ({ ...state, error, loading: false })),
+);
+
+// Effect — maneja el I/O y despacha nuevas acciones
+loadUsers$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(loadUsers),
+    switchMap(() =>
+      this.userService.getAll().pipe(
+        map((users) => loadUsersSuccess({ users })),
+        catchError((err) => of(loadUsersFailure({ error: err.message }))),
+      ),
+    ),
+  ),
+);
+
+// Selector memoizado
+const selectUsers = createSelector(
+  selectUsersState,
+  (state) => state.users.filter((u) => u.active)
+);
+// En el componente:
+users$ = this.store.select(selectUsers);
+\`\`\`
+
+**NgRx Signal Store** (v17+): alternativa ligera y sin boilerplate usando Signals. \`signalStore\` compone piezas funcionales: \`withState\`, \`withComputed\`, \`withMethods\`, \`withHooks\`. Más ergonómico para stores pequeños/medianos, sin Actions ni Effects separados. No requiere RxJS para lo básico.
+
+**Entity Adapter** simplifica el manejo de colecciones: \`addOne\`, \`updateOne\`, \`removeOne\`, \`setAll\`, con IDs indexados para O(1) en lugar de \`Array.find\`.
+
+**NgRx vs Servicios con BehaviorSubject**: para estado local de un componente, un servicio con BehaviorSubject es suficiente. NgRx brilla para estado global compartido entre módulos con interacciones complejas, auditabilidad (Actions como log), y testing determinista de effects.`,
+  },
+  {
+    topicId: 'rxjs',
+    body: `**RxJS** implementa el patrón Observer con un enfoque funcional y composable. Un **Observable** es una secuencia lazy de cero o más valores a lo largo del tiempo, que solo "corre" cuando hay un suscriptor. Un **Subject** es a la vez Observable y Observer: puedes emitir valores desde fuera (\`subject.next(val)\`).
+
+**Tipos de Subject**: \`Subject\` (no repite valores pasados a nuevos suscriptores), \`BehaviorSubject\` (emite el último valor al suscribirse — ideal para estado), \`ReplaySubject(n)\` (repite los últimos N), \`AsyncSubject\` (solo emite el último valor al completarse).
+
+**Operadores de transformación** — los más críticos:
+- \`map\`: transforma 1→1 síncrono.
+- \`switchMap\`: cancela la suscripción anterior al llegar un nuevo valor. Para búsquedas/typeahead donde solo interesa el último.
+- \`mergeMap\` (alias \`flatMap\`): suscribe en paralelo, sin orden. Para peticiones independientes concurrentes.
+- \`concatMap\`: espera a que termine el anterior antes de suscribir al siguiente. Para operaciones ordenadas/secuenciales.
+- \`exhaustMap\`: ignora nuevos valores mientras hay una suscripción activa. Para botones "submit" que no deben repetirse.
+
+**Operadores de combinación**:
+- \`combineLatest([a$, b$])\`: emite cuando cualquiera emite, con los últimos valores de todos. Para vistas que dependen de múltiples fuentes.
+- \`forkJoin([a$, b$])\`: espera a que todos completen, emite el último valor de cada uno. Para peticiones paralelas donde quieres los resultados juntos.
+- \`zip\`: combina por posición (emite cuando todos han emitido el N-ésimo valor).
+- \`merge\`: mezcla streams en paralelo, sin esperar.
+- \`withLatestFrom\`: combina el observable principal con el último valor de otro (sin suscribirse al secundario).
+
+**Gestión de recursos** — evitar memory leaks:
+\`\`\`ts
+// Patrón moderno en Angular:
+readonly users$ = this.store.select(selectUsers).pipe(takeUntilDestroyed());
+// O con async pipe en template — Angular gestiona la suscripción
+\`\`\`
+
+**shareReplay(1)**: convierte un Observable frío en hot y cachea el último valor. Útil para peticiones HTTP compartidas entre múltiples componentes sin repetir el fetch. Sin \`{refCount: true}\`, el upstream no se cancela nunca — cuidado en Angular con HTTP.
+
+**Depuración con tap**: \`tap(val => console.log('valor:', val))\` sin alterar el stream. \`catchError\` debe devolver un Observable (p.ej. \`of(fallback)\`) o relanzar con \`throwError(() => err)\`.`,
+  },
+  {
+    topicId: 'microfrontend',
+    body: `**Micro-frontend** extiende los principios de microservicios al frontend: equipos independientes despliegan porciones de la UI de forma autónoma, cada una con su propio ciclo de release. El "shell" o host orquesta qué micro-app carga en cada ruta.
+
+**Module Federation** (Webpack 5 / Native Federation para Angular con esbuild): el mecanismo de integración más usado en la actualidad. Un remote expone módulos compilados; el host los consume en runtime sin recompilar. Configuración clave:
+\`\`\`js
+// remote (widget-manager en Agata):
+new ModuleFederationPlugin({
+  name: 'widgetManager',
+  exposes: { './EntityDetail': './src/widgets/entity-detail' },
+  shared: { react: { singleton: true, requiredVersion: '^18.0.0' } }
+})
+// host (agata-front-next):
+new ModuleFederationPlugin({
+  remotes: { widgetManager: 'widgetManager@https://cdn.example.com/remoteEntry.js' },
+  shared: { react: { singleton: true } }  // una sola instancia de React
+})
+\`\`\`
+La directiva **singleton** en los shared es crítica: React, Angular y otros frameworks no pueden tener múltiples instancias activas. Sin ella, los hooks fallan con "Hooks can only be called inside a function component".
+
+**Web Components como delivery**: el remote expone Custom Elements en lugar de módulos JS. El host usa \`<widget-entity-detail>\` como HTML estándar, sin conocer el framework interno. Es el patrón de Agata: **@r2wc/react-to-web-component** envuelve componentes React en Custom Elements, y **DynamicWebComponent** gestiona un triple caché (React state → blob URL → network) para servir el script del widget con latencia cero tras la primera carga.
+
+**iframe-based**: máximo aislamiento (CSS, JS, errores) pero con las limitaciones de comunicación (postMessage, limitado) y UX (scroll, resize, deep linking). Usado en legacy o cuando el aislamiento de seguridad es prioritario.
+
+**Comunicación entre micro-apps**: \`CustomEvent\` en el DOM (desacoplado), \`window.postMessage\` (entre iframes o web workers), \`BroadcastChannel\` (entre pestañas/iframes del mismo origen), **WidgetMessenger** (Agata: singleton de postMessage con un protocolo tipado de MessageTypes para comunicación bidireccional host↔widget). Evitar estado global compartido mediante módulos JS — crea acoplamiento implícito.
+
+**Trade-offs reales**: cada bundle copia sus propias dependencias no compartidas → mayor peso total. La coordinación de versiones entre equipos es un reto. El debugging a través de micro-apps es más complejo. Compensa cuando los equipos superan ~15-20 personas o cuando los ciclos de release son verdaderamente independientes.`,
+  },
+  {
+    topicId: 'spa',
+    body: `**SPA (Single Page Application)** carga una sola página HTML y actualiza el DOM dinámicamente sin recargas completas. El navegador descarga el bundle JS, el framework hidrata la app y el **History API** (\`pushState\`/\`replaceState\`) gestiona la navegación sin peticiones al servidor. Resultado: transiciones de página instantáneas tras el primer load.
+
+**Estrategias de rendering**:
+- **CSR (Client-Side Rendering)**: el servidor devuelve HTML vacío + bundle JS. El navegador ejecuta el JS, hace fetch de datos y renderiza. Ventajas: carga inicial única, transiciones fluidas, desacople total front-back. Desventajas: TTFB de contenido alto (el HTML inicial está vacío), malo para SEO por defecto, First Contentful Paint lento en conexiones lentas.
+- **SSR (Server-Side Rendering)**: cada petición genera HTML en el servidor (con datos) y lo envía. Luego el JS "hidrata" la app para hacerla interactiva. Ventajas: buen SEO, FCP rápido. Desventajas: carga en el servidor por petición, TTFB puede ser alto si la DB es lenta, complejidad (el código debe funcionar en ambos entornos).
+- **SSG (Static Site Generation)**: el HTML se genera en build-time, se sirve como fichero estático desde CDN. Velocidad máxima, sin servidor. Para contenido que no cambia frecuentemente.
+- **ISR (Incremental Static Regeneration)**: SSG con revalidación en background cada N segundos. Next.js: \`revalidate: 60\` en los route handlers. El primer request tras expirar regenera la página.
+
+**Hidratación**: proceso por el cual el JS en el cliente "toma control" del HTML pre-renderizado por el servidor, añadiendo event listeners sin volver a crear el DOM. Problemas comunes: **hydration mismatch** (el HTML del servidor difiere del que generaría el cliente → React lanza error), acceso a \`window\`/\`localStorage\` durante SSR (solo existen en el navegador).
+
+**Code splitting y lazy loading**: dividir el bundle en chunks por ruta o por componente. Next.js lo hace automáticamente por página; en SPA puro, \`React.lazy(() => import('./Page'))\` + \`<Suspense>\`. Reduce el JS inicial cargado → mejora el TTI (Time to Interactive).
+
+**Routing**: el router intercepta clicks en \`<a>\` y cambios de URL, actualiza el estado de la app y renderiza el componente correspondiente sin recarga. En Next.js App Router, \`<Link>\` hace prefetch de la ruta destino al hacer hover. En Angular Router, el route guard (\`CanActivateFn\`) puede cancelar la navegación (para auth) o el resolver puede precargar datos.
+
+**Shell app pattern** en micro-frontends: la SPA principal actúa como "shell" que carga dinámicamente las micro-apps según la ruta activa. El shell gestiona autenticación, layout global y navegación; las micro-apps gestionan su dominio propio.`,
+  },
 ];
 
 export function theory(topicId: string): TheorySection | undefined {

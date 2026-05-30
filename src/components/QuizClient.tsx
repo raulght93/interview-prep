@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, RotateCcw, Trophy } from 'lucide-react';
+import { ArrowLeft, RotateCcw, SkipForward, Trophy } from 'lucide-react';
 import { getTopic, questionsByTopic } from '@/lib/data';
 import { shuffle } from '@/lib/srs';
 import { useProgress } from '@/lib/useProgress';
@@ -20,7 +20,7 @@ export default function QuizClient({ topicId }: { topicId: string }) {
   const [phase, setPhase] = useState<Phase>('config');
   const [deck, setDeck] = useState<Question[]>([]);
   const [idx, setIdx] = useState(0);
-  const [results, setResults] = useState<{ q: Question; correct: boolean }[]>([]);
+  const [results, setResults] = useState<{ q: Question; correct: boolean; skipped: boolean }[]>([]);
 
   function start(count: number | 'all') {
     const shuffled = shuffle(all);
@@ -34,7 +34,19 @@ export default function QuizClient({ topicId }: { topicId: string }) {
   function answer(correct: boolean) {
     const q = deck[idx];
     mark(q.id, correct ? 'known' : 'review');
-    const next = [...results, { q, correct }];
+    const next = [...results, { q, correct, skipped: false }];
+    setResults(next);
+    if (idx + 1 >= deck.length) {
+      setPhase('done');
+    } else {
+      setIdx(idx + 1);
+    }
+  }
+
+  function skip() {
+    const q = deck[idx];
+    mark(q.id, 'skipped');
+    const next = [...results, { q, correct: false, skipped: true }];
     setResults(next);
     if (idx + 1 >= deck.length) {
       setPhase('done');
@@ -102,7 +114,12 @@ export default function QuizClient({ topicId }: { topicId: string }) {
               <span>{idx + 1} de {deck.length}</span>
               <span>{results.filter((r) => r.correct).length} aciertos</span>
             </div>
-            <ProgressBar value={idx} max={deck.length} label="Progreso del quiz" />
+            <ProgressBar
+              value={idx}
+              max={deck.length}
+              skipped={results.filter((r) => r.skipped).length}
+              label="Progreso del quiz"
+            />
           </div>
           <QuizQuestion
             key={deck[idx].id}
@@ -110,6 +127,7 @@ export default function QuizClient({ topicId }: { topicId: string }) {
             index={idx}
             total={deck.length}
             onAnswer={answer}
+            onSkip={skip}
           />
         </div>
       )}
@@ -123,22 +141,26 @@ function QuizSummary({
   results,
   onRestart,
 }: {
-  results: { q: Question; correct: boolean }[];
+  results: { q: Question; correct: boolean; skipped: boolean }[];
   onRestart: () => void;
 }) {
+  const skipped = results.filter((r) => r.skipped).length;
   const correct = results.filter((r) => r.correct).length;
+  const answered = results.length - skipped;
   const total = results.length;
-  const pct = total ? Math.round((correct / total) * 100) : 0;
-  const failed = results.filter((r) => !r.correct);
+  const pct = answered ? Math.round((correct / answered) * 100) : 0;
+  const failed = results.filter((r) => !r.correct && !r.skipped);
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-900 sm:p-8">
       <div className="text-center">
         <Trophy size={40} className="mx-auto mb-3 text-amber-500" aria-hidden />
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">{correct} / {total}</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{pct}% de aciertos</p>
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">{correct} / {answered}</h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          {pct}% de aciertos{skipped > 0 && ` · ${skipped} saltadas`}
+        </p>
         <div className="mx-auto mt-4 max-w-xs">
-          <ProgressBar value={correct} max={total} label="Resultado" />
+          <ProgressBar value={total} max={total} skipped={skipped} label="Resultado" />
         </div>
       </div>
 

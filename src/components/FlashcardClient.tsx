@@ -22,6 +22,7 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
   const [flipped, setFlipped] = useState(false);
   const [shuffleOn, setShuffleOn] = useState(false);
   const [seeded, setSeeded] = useState(false);
+  const [skippedCount, setSkippedCount] = useState(0);
 
   // Seed the deck order once, after progress hydrates, using SRS sort.
   // Also honour a ?card=<id> deep link from search.
@@ -62,6 +63,7 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
     (status: CardStatus) => {
       if (!current) return;
       mark(current.id, status);
+      if (status === 'skipped') setSkippedCount((n) => n + 1);
       goNext();
     },
     [current, mark, goNext],
@@ -72,6 +74,7 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
     setShuffleOn(next);
     setIdx(0);
     setFlipped(false);
+    setSkippedCount(0);
     setOrder(next ? shuffle(base) : srsSort(base, progress));
   }
 
@@ -147,7 +150,7 @@ export default function FlashcardClient({ topicId }: { topicId: string }) {
           <span>{idx + 1} de {order.length}</span>
           <span>{Math.round(((idx + 1) / order.length) * 100)}%</span>
         </div>
-        <ProgressBar value={idx + 1} max={order.length} label="Progreso del tema" />
+        <ProgressBar value={idx + 1} max={order.length} skipped={skippedCount} label="Progreso del tema" />
       </div>
 
       {current && <Flashcard question={current} flipped={flipped} status={status} onFlip={doFlip} />}
