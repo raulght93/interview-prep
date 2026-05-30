@@ -2,14 +2,14 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, Check } from 'lucide-react';
 import type { Components } from 'react-markdown';
 
 function useDarkMode() {
-  const [isDark, setIsDark] = useState(true); // app default is dark
+  const [isDark, setIsDark] = useState(true);
   useEffect(() => {
     const check = () => setIsDark(document.documentElement.classList.contains('dark'));
     check();
@@ -26,7 +26,7 @@ function CopyButton({ code }: { code: string }) {
     <button
       type="button"
       onClick={(e) => {
-        e.stopPropagation(); // don't flip the flashcard
+        e.stopPropagation();
         navigator.clipboard.writeText(code).then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
@@ -45,8 +45,71 @@ function CopyButton({ code }: { code: string }) {
   );
 }
 
+/**
+ * Wrapper that detects horizontal overflow and shows a gradient + scroll badge.
+ * Works for both <pre> and the SyntaxHighlighter div.
+ */
+function ScrollHint({
+  children,
+  bgFrom,
+}: {
+  children: React.ReactNode;
+  bgFrom: string; // tailwind class for the gradient 'from' color, e.g. 'from-zinc-50'
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+  const [atEnd, setAtEnd] = useState(false);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    // The actual scrollable child (pre or the SyntaxHighlighter div)
+    const scrollEl = wrap.firstElementChild as HTMLElement | null;
+    if (!scrollEl) return;
+
+    const check = () => {
+      const has = scrollEl.scrollWidth > scrollEl.clientWidth + 2;
+      setOverflows(has);
+      setAtEnd(!has || scrollEl.scrollLeft + scrollEl.clientWidth >= scrollEl.scrollWidth - 4);
+    };
+
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(scrollEl);
+    scrollEl.addEventListener('scroll', check, { passive: true });
+    return () => {
+      ro.disconnect();
+      scrollEl.removeEventListener('scroll', check);
+    };
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      {children}
+      {/* Right-edge gradient fade */}
+      {overflows && !atEnd && (
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l ${bgFrom} to-transparent`}
+        />
+      )}
+      {/* Scroll hint badge */}
+      {overflows && (
+        <div
+          aria-hidden
+          className="absolute bottom-1.5 right-2 select-none rounded bg-black/10 px-1.5 py-0.5 font-mono text-[9px] leading-none text-zinc-500 dark:bg-white/10 dark:text-zinc-400"
+          style={{ opacity: atEnd ? 0.25 : 0.75, transition: 'opacity 0.2s' }}
+        >
+          ← desliza →
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CodeBlock({ language, code, isDark }: { language: string | null; code: string; isDark: boolean }) {
-  const isPlain = !language; // unlabeled blocks → ASCII art / plain text
+  const isPlain = !language;
 
   const darkCustomStyle = {
     margin: 0,
@@ -75,9 +138,11 @@ function CodeBlock({ language, code, isDark }: { language: string | null; code: 
           </span>
           <CopyButton code={code} />
         </div>
-        <pre className="overflow-x-auto bg-zinc-50 p-4 font-mono text-[0.8rem] leading-relaxed text-zinc-700 dark:bg-[#161616] dark:text-zinc-300">
-          {code}
-        </pre>
+        <ScrollHint bgFrom={isDark ? 'from-[#161616]' : 'from-zinc-50'}>
+          <pre className="overflow-x-auto bg-zinc-50 p-3 font-mono text-[0.7rem] leading-relaxed text-zinc-700 sm:p-4 sm:text-[0.8rem] dark:bg-[#161616] dark:text-zinc-300">
+            {code}
+          </pre>
+        </ScrollHint>
       </div>
     );
   }
@@ -90,15 +155,17 @@ function CodeBlock({ language, code, isDark }: { language: string | null; code: 
         </span>
         <CopyButton code={code} />
       </div>
-      <SyntaxHighlighter
-        language={language}
-        style={isDark ? vscDarkPlus : vs}
-        customStyle={isDark ? darkCustomStyle : lightCustomStyle}
-        showLineNumbers={false}
-        wrapLongLines={false}
-      >
-        {code}
-      </SyntaxHighlighter>
+      <ScrollHint bgFrom={isDark ? 'from-[#1e1e1e]' : 'from-[#f8f8f8]'}>
+        <SyntaxHighlighter
+          language={language}
+          style={isDark ? vscDarkPlus : vs}
+          customStyle={isDark ? darkCustomStyle : lightCustomStyle}
+          showLineNumbers={false}
+          wrapLongLines={false}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </ScrollHint>
     </div>
   );
 }
@@ -129,7 +196,6 @@ export default function Markdown({ children }: { children: string }) {
       </a>
     ),
     hr: () => <hr className="my-4 border-zinc-200 dark:border-zinc-700" />,
-    // Tables (remark-gfm)
     table: ({ children }) => (
       <div className="mb-3 overflow-x-auto last:mb-0">
         <table className="w-full border-collapse text-sm">{children}</table>
@@ -143,19 +209,16 @@ export default function Markdown({ children }: { children: string }) {
     td: ({ children }) => (
       <td className="border border-zinc-300 px-3 py-2 dark:border-zinc-700">{children}</td>
     ),
-    // Pre is stripped so CodeBlock can render its own wrapper
     pre: ({ children }) => <>{children}</>,
     code({ className, children }) {
       const match = /language-(\w+)/.exec(className ?? '');
       const language = match?.[1] ?? null;
       const code = String(children).replace(/\n$/, '');
 
-      // Block code: has a language class, or contains newlines (fenced block without lang)
       if (language || code.includes('\n')) {
         return <CodeBlock language={language} code={code} isDark={isDark} />;
       }
 
-      // Inline code
       return (
         <code className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[0.85em] text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">
           {children}
