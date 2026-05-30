@@ -62,8 +62,9 @@ const WELCOME_KEY = 'interview-prep-welcome-v1';
 export default function Home() {
   const { progress, hydrated, reload } = useProgress();
 
-  const totalKnown = questions.filter((q) => getCard(progress, q.id).status === 'known').length;
-  const totalReview = questions.filter((q) => getCard(progress, q.id).status === 'review').length;
+  const totalKnown   = questions.filter((q) => getCard(progress, q.id).status === 'known').length;
+  const totalReview  = questions.filter((q) => getCard(progress, q.id).status === 'review').length;
+  const totalSkipped = questions.filter((q) => getCard(progress, q.id).status === 'skipped').length;
   const globalPct = questions.length ? Math.round((totalKnown / questions.length) * 100) : 0;
 
   // Order topics by interview priority (risk first, then least-known).
@@ -225,7 +226,12 @@ export default function Home() {
             {hydrated ? `${totalKnown} / ${questions.length} conocidas · ${globalPct}%` : '…'}
           </span>
         </div>
-        <ProgressBar value={totalKnown} max={questions.length} label="Progreso global" />
+        <ProgressBar
+          value={totalKnown + totalReview + totalSkipped}
+          max={questions.length}
+          skipped={totalSkipped}
+          label="Progreso global"
+        />
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-400 dark:text-zinc-500">
           <span>{hydrated ? `${totalReview} marcadas para repasar` : ' '}</span>
           <ExportImport onImported={reload} />

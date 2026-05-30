@@ -29,7 +29,12 @@ export default function TopicCard({ topic, stats }: { topic: Topic; stats: Topic
       <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">{topic.description}</p>
 
       <div className="mb-4 mt-auto">
-        <ProgressBar value={stats.known} max={stats.total} label={`${stats.known} de ${stats.total} conocidas`} />
+        <ProgressBar
+          value={stats.known + stats.review + stats.skipped}
+          max={stats.total}
+          skipped={stats.skipped}
+          label={`${stats.known} de ${stats.total} conocidas`}
+        />
         <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">
           {stats.known} conocidas · {stats.review} a repasar · {stats.newCount} nuevas
           {stats.skipped > 0 && ` · ${stats.skipped} saltadas`}

@@ -21,6 +21,7 @@ export default function MixPage() {
   const [seeded, setSeeded] = useState(false);
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [skippedCount, setSkippedCount] = useState(0);
 
   const seed = useCallback(() => {
     // Bucket by status; within "new"/"review" sort by topic risk (high first), then shuffle.
@@ -64,6 +65,7 @@ export default function MixPage() {
     (s: CardStatus) => {
       if (!current) return;
       mark(current.id, s);
+      if (s === 'skipped') setSkippedCount((n) => n + 1);
       next();
     },
     [current, mark, next],
@@ -129,7 +131,7 @@ export default function MixPage() {
                 </span>
                 <span>{idx + 1} de {deck.length}</span>
               </div>
-              <ProgressBar value={idx} max={deck.length} label="Progreso de la sesión" />
+              <ProgressBar value={idx} max={deck.length} skipped={skippedCount} label="Progreso de la sesión" />
             </div>
 
             <Flashcard question={current} flipped={flipped} status={status} onFlip={reveal} />

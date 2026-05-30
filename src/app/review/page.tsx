@@ -21,6 +21,7 @@ export default function ReviewPage() {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [cleared, setCleared] = useState(0);
+  const [skippedCount, setSkippedCount] = useState(0);
 
   useEffect(() => {
     if (!hydrated || seeded) return;
@@ -60,6 +61,7 @@ export default function ReviewPage() {
     if (!currentId) return;
     mark(currentId, 'skipped');
     setFlipped(false);
+    setSkippedCount((n) => n + 1);
     setIdx((i) => i + 1);
   }
 
@@ -117,7 +119,7 @@ export default function ReviewPage() {
                 </span>
                 <span>{remaining} restante{remaining === 1 ? '' : 's'}</span>
               </div>
-              <ProgressBar value={idx} max={deck.length} label="Progreso del repaso" />
+              <ProgressBar value={idx} max={deck.length} skipped={skippedCount} label="Progreso del repaso" />
             </div>
 
             <Flashcard question={current} flipped={flipped} status="review" onFlip={reveal} />
