@@ -13,6 +13,21 @@ import {
   loadMcqSkipped, saveMcqSkipped,
 } from '@/lib/storage';
 
+/** Shuffle a question's options and update correctIndex to match the new position. */
+function shuffleOptions(q: McqQuestion): McqQuestion {
+  // Fisher-Yates on [0,1,2,3] then re-map
+  const perm = [0, 1, 2, 3];
+  for (let i = perm.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [perm[i], perm[j]] = [perm[j], perm[i]];
+  }
+  return {
+    ...q,
+    options: perm.map((i) => q.options[i]),
+    correctIndex: perm.indexOf(q.correctIndex),
+  };
+}
+
 type Phase = 'config' | 'running' | 'done';
 type TestMode = 'all' | 'failed' | 'skipped';
 
@@ -59,7 +74,9 @@ export default function TestPage() {
     const source = overridePool ?? pool;
     const shuffled = shuffle(source);
     const n = Math.min(count, shuffled.length);
-    setDeck(shuffled.slice(0, n));
+    // Shuffle options of each question so the correct answer is in a random position
+    const deck = shuffled.slice(0, n).map(shuffleOptions);
+    setDeck(deck);
     setIdx(0);
     setPicked(null);
     setRevealed(false);

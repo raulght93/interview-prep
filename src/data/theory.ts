@@ -204,6 +204,38 @@ Los **traces** son el viaje de una petición por varios servicios, representado 
 **SLI/SLO/SLA.** SLI es la métrica (latencia, disponibilidad); SLO es tu objetivo interno ("99.9% < 200ms en 30 días"); SLA el contrato externo con consecuencias. El **error budget** (1 - SLO) define cuánto error te permites gastar; si te lo gastas, congelas releases y priorizas fiabilidad. Es el contrapeso entre velocidad y estabilidad — el lenguaje SRE para decidir cuándo seguir entregando y cuándo invertir en infra.`,
   },
   {
+    topicId: 'storage',
+    body: `**Almacenamiento de objetos**: los sistemas de object storage guardan datos como **objetos** (datos binarios + metadatos + clave única) en **buckets** planos, sin jerarquía de directorios real. El acceso es vía API HTTP/REST, no sistemas de ficheros (NFS, CIFS). El estándar de facto es la **S3 API de AWS**: cualquier sistema que la implemente es compatible con el ecosistema de herramientas S3.
+
+**MinIO** es un servidor de object storage open-source compatible con S3, diseñado para desplegarse on-premises en Kubernetes o bare metal. Características clave:
+- Compatible 100% con S3 API: putObject, getObject, deleteObject, presignedUrl, multipart upload, ACLs, versioning.
+- Erasure Coding (Reed-Solomon): distribuye los datos en N+K drives de forma que soporta K fallos sin pérdida de datos.
+- Operator de Kubernetes: CRD \`Tenant\` gestiona pools de nodos, almacenamiento y TLS. Ideal para self-hosted.
+- Identidad y acceso: politica IAM con JSON (igual que AWS IAM), STS para tokens temporales.
+- Alta disponibilidad: al menos 4 nodos para erasure coding; topology spread constraints en K8s.
+- Rendimiento: puede superar 300 GB/s de lectura en clusters NVMe.
+
+**SeaweedFS** es un sistema de ficheros distribuido orientado a almacenar millones de ficheros pequeños eficientemente, inspirado en Facebook Haystack. Arquitectura:
+- **Master servers**: gestionan el volumen de metadatos (qué fichero está en qué volumen).
+- **Volume servers**: almacenan el contenido real, agrupando ficheros en volúmenes de tamaño fijo para reducir operaciones de metadatos.
+- **Filer** (opcional): capa POSIX/S3-compatible sobre los volúmenes, con soporte de directorios.
+- Ventaja: lookup de metadatos en memoria → latencias muy bajas para ficheros pequeños.
+
+**Comparativa en el contexto del file manager de Agata**:
+| Sistema | Caso de uso | Protocolo | Escalabilidad | Complejidad op. |
+|---------|------------|-----------|---------------|-----------------|
+| **MinIO** | Object storage S3-compatible on-prem | S3 REST | Horizontal (pools) | Media |
+| **SeaweedFS** | Millones de ficheros pequeños | S3/POSIX/gRPC | Horizontal | Baja-Media |
+| **Ceph** | Block + Object + File en uno | S3/RBD/CephFS | Alta (RADOS) | Alta |
+| **HDFS** | Big Data / batches grandes | HDFS proto | Horizontal | Alta |
+| **Documentum** | ECM/GED corporativo con workflows | CMIS/propietario | Limitada | Muy alta |
+| **NAS (NFS/SMB)** | Ficheros compartidos clásicos | NFS/SMB | Limitada | Baja |
+
+**Presigned URLs**: patrón clave de seguridad en object storage. El backend genera una URL temporal firmada con HMAC-SHA256 (válida N segundos) que el cliente usa para subir/descargar directamente al storage sin pasar por el backend. Beneficios: no expones credenciales al cliente, el backend no actúa como proxy, el storage gestiona el ancho de banda.
+
+**Agata File Manager**: usa MinIO/SeaweedFS como backend de almacenamiento de documentos y adjuntos de entidades. El connector genera presigned URLs para uploads/downloads directos desde el frontend. La metadata (nombre, tipo, tamaño, entidad asociada) vive en la BD relacional; el contenido binario en el object store. Separación de responsabilidades: la BD para búsquedas y relaciones, el object store para bytes.`,
+  },
+  {
     topicId: 'redux',
     body: `**Redux** es un gestor de estado global predecible: **una sola fuente de verdad** (el store), estado **inmutable** y cambios solo mediante **acciones puras**. El flujo es unidireccional: UI dispara una acción → el reducer (función pura) calcula el nuevo estado → el store notifica a los suscriptores.
 

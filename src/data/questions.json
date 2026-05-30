@@ -190,6 +190,13 @@
       "risk": "medio"
     },
     {
+      "id": "storage",
+      "emoji": "🪣",
+      "name": "Object Storage / MinIO / SeaweedFS",
+      "description": "S3 API, MinIO on-prem, SeaweedFS, Ceph, presigned URLs, comparativa vs Documentum/NAS.",
+      "risk": "medio"
+    },
+    {
       "id": "redux",
       "emoji": "🗃️",
       "name": "Redux / RTK",
@@ -3367,6 +3374,31 @@
       "id": "cicd-5", "topicId": "cicd", "tags": ["gitops", "argocd"], "difficulty": "medium",
       "question": "¿Qué es GitOps y cómo lo aplicas en Kubernetes?",
       "answer": "**GitOps** es un modelo operacional donde el estado deseado del sistema se declara en Git, y una herramienta lo sincroniza automáticamente con el estado real. Ningún cambio manual en producción: todo via PR y merge.\n\n```\nFlujo GitOps:\n\nDev → PR (actualiza Helm chart / K8s manifests)\n     → Code Review\n     → Merge en main\n     → ArgoCD detecta el cambio en el repo\n     → ArgoCD aplica los cambios al cluster\n     → Rollout del nuevo Deployment\n```\n\n**ArgoCD** monitorea el repo de configuración y sincroniza el cluster:\n```yaml\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: agata-connector\nspec:\n  source:\n    repoURL: https://git.agata.local/infra/k8s-config\n    targetRevision: main\n    path: apps/agata-connector\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: agata-prod\n  syncPolicy:\n    automated:                    # auto-sync cuando cambia el repo\n      prune: true                 # elimina recursos eliminados del repo\n      selfHeal: true              # corrige divergencias manuales en el cluster\n```\n\n**Ventajas**: auditoría completa (Git history = historial de cambios en prod), rollback = `git revert`, PR = puerta de revisión antes de producción, sin kubectl manual con permisos amplios.\n\n**Separar repos**: uno para el código de la app, otro para la configuración de infra/K8s (o carpetas separadas en el mismo mono-repo)."
+    },
+    {
+      "id": "storage-1", "topicId": "storage", "tags": ["s3", "conceptos"], "difficulty": "easy",
+      "question": "¿Qué diferencia hay entre object storage (S3/MinIO) y un sistema de ficheros clásico (NFS)?",
+      "answer": "**Object storage** trata cada fichero como un objeto plano con una clave única dentro de un bucket. No hay directorios reales (las 'carpetas' son solo prefijos en la clave). El acceso es vía **API HTTP/REST** (`PUT /bucket/key`, `GET /bucket/key`), sin montar el sistema de ficheros. Escala horizontalmente a petabytes añadiendo nodos.\n\n**NFS / sistema de ficheros**: jerarquía real de directorios, acceso POSIX (read/write/seek), semántica de bloqueo de ficheros, montura a nivel de SO. Escala peor (un servidor NFS típico satura en miles de clientes).\n\n**Cuándo usar cada uno**:\n- **Object storage**: blobs binarios, copias de seguridad, adjuntos, media — sin necesidad de seek ni append. API REST desde cualquier lenguaje/plataforma.\n- **NFS**: cuando la aplicación necesita acceso POSIX real (seek, rename atómico, permisos UNIX), bases de datos, compilaciones.\n- **Agata**: adjuntos y documentos de entidades → object storage (MinIO/SeaweedFS). Las apps no necesitan montar el FS."
+    },
+    {
+      "id": "storage-2", "topicId": "storage", "tags": ["minio", "presigned"], "difficulty": "medium",
+      "question": "¿Cómo funciona una presigned URL y por qué es preferible a que el backend actúe como proxy?",
+      "answer": "Una **presigned URL** es una URL HTTP que incluye credenciales firmadas (HMAC-SHA256) con un tiempo de expiración. El backend la genera sin exponer las credenciales al cliente:\n\n```java\n// Generar presigned URL para subir un fichero (MinIO Java SDK):\nPutObjectArgs args = PutObjectArgs.builder()\n    .bucket(\"agata-docs\")\n    .object(\"entities/123/doc.pdf\")\n    .contentType(\"application/pdf\")\n    .build();\nString url = minioClient.getPresignedObjectUrl(\n    GetPresignedObjectUrlArgs.builder()\n        .method(Method.PUT)\n        .bucket(\"agata-docs\")\n        .object(\"entities/123/doc.pdf\")\n        .expiry(15, TimeUnit.MINUTES)  // válida 15 min\n        .build());\n// Devolver la URL al frontend; el frontend hace PUT directo a MinIO\n```\n\n**Por qué es mejor que el backend como proxy**:\n- El backend no recibe ni reenvía los bytes → no consume memoria/CPU/red del backend\n- MinIO gestiona el upload directamente (multipart para ficheros grandes)\n- Las credenciales de MinIO nunca llegan al cliente (solo la URL firmada)\n- Escala sin cambios en el backend aunque los ficheros sean de GB\n\n**Expiración**: si la URL caduca antes de que el cliente la use → error 403. Típicamente 5-15 minutos para uploads; para descargas de documentos activos, tokens con sesión."
+    },
+    {
+      "id": "storage-3", "topicId": "storage", "tags": ["seaweedfs", "arquitectura"], "difficulty": "medium",
+      "question": "¿Cómo almacena SeaweedFS millones de ficheros pequeños eficientemente?",
+      "answer": "El problema de los filesystems clásicos con millones de ficheros: cada fichero requiere un inode, y el árbol de inodos no cabe en memoria → cada lookup supone I/O a disco para leer metadatos.\n\n**SeaweedFS** resuelve esto con:\n1. **Master server**: guarda en memoria el mapa de `fileId → (volumeId, offset)`. Lookup O(1) en RAM.\n2. **Volume servers**: agrupan cientos de miles de ficheros pequeños en un único fichero grande (volumen de ~30GB). El fichero del objeto se guarda como un chunk dentro del volumen → 1 I/O de disco para leer, sin inode overhead por fichero.\n3. **Filer**: capa opcional que añade semántica de directorios y S3-compatible API sobre los volúmenes.\n\n```\nLookup de un objeto:\n1. Cliente → Master: \"¿dónde está fileId 1234?\"\n2. Master (en memoria): \"volumeId 7, offset 0x4A8000\"\n3. Cliente → Volume Server 3: \"dame 4096 bytes del volumen 7 en offset 0x4A8000\"\n→ 1 round-trip extra vs S3 directo, pero con latencias <1ms\n```\n\n**Agata context**: para un sistema con millones de adjuntos pequeños (thumbnails, PDFs, XML de entidades), SeaweedFS es eficiente. MinIO es más operacionalmente simple si los ficheros son menos numerosos pero más grandes."
+    },
+    {
+      "id": "storage-4", "topicId": "storage", "tags": ["comparativa", "ceph", "documentum"], "difficulty": "easy",
+      "question": "¿Cuándo elegirías Ceph sobre MinIO, y cuándo ninguno de los dos (Documentum)?",
+      "answer": "**Ceph** cuando necesitas múltiples protocolos en el mismo cluster:\n- **RADOS Object** (S3-compatible) para objetos\n- **RBD** (block device) para volúmenes de VMs o bases de datos\n- **CephFS** para acceso POSIX distribuido\n\nEl precio: complejidad operacional muy alta (CRUSH map, monitors, OSDs, MONs, MGRs, MDSs). Equipo SRE dedicado. Para equipos pequeños, MinIO o SeaweedFS son más manejables.\n\n**MinIO** cuando solo necesitas object storage S3-compatible on-prem con operación simple. No block, no filesystem.\n\n**Documentum (OpenText)** es un ECM/GED completamente diferente:\n- Gestión documental con workflows de aprobación, versionado de documentos, políticas de retención, auditoría legal\n- CMIS (Content Management Interoperability Services) como protocolo estándar\n- Diseñado para cumplimiento normativo (GDPR, SOX, ISO 15489)\n- Tiene su propio sistema de almacenamiento de ficheros interno\n\nSi Agata necesita solo \"guardar ficheros de entidades\" → MinIO/SeaweedFS. Si necesitara gestión documental corporativa con workflows de aprobación y retención legal → Documentum (o Alfresco como alternativa open-source)."
+    },
+    {
+      "id": "storage-5", "topicId": "storage", "tags": ["erasure-coding", "minio", "ha"], "difficulty": "hard",
+      "question": "¿Qué es el Erasure Coding en MinIO y cómo garantiza alta disponibilidad?",
+      "answer": "**Erasure Coding** (Reed-Solomon) divide cada objeto en `N` fragmentos de datos + `K` fragmentos de paridad, distribuidos en `N+K` drives/nodos distintos. Se puede recuperar el objeto original con cualquier `N` de los `N+K` fragmentos — se toleran hasta `K` fallos simultáneos.\n\n```\nEjemplo EC 4+2 (MinIO por defecto con 6 drives):\nObjeto original → [D1][D2][D3][D4] + [P1][P2] (paridad)\nDistribuidos en 6 drives diferentes.\nFallan drives 1 y 3 → se reconstruye con D2, D4, P1, P2\n```\n\n**MinIO y Kubernetes**: el Operator crea un `Tenant` con `pools` de pods, cada pod con PVC en un nodo diferente:\n```yaml\nspec:\n  pools:\n    - servers: 4\n      volumesPerServer: 2  # 4×2 = 8 drives → EC 4+4 (tolera 4 fallos)\n      volumeClaimTemplate:\n        spec:\n          storageClassName: local-nvme\n          resources:\n            requests: { storage: 2Ti }\n```\n\n**vs replicación**: con 3 réplicas almacenas 3× los datos. Con EC 4+2 almacenas 1.5× (50% overhead vs 200%). Erasure coding es más eficiente en espacio para el mismo nivel de tolerancia a fallos.\n\n**Quórum**: MinIO necesita `N/2 + 1` drives disponibles para reads y `N/2 + 1` para writes."
     },
     {
       "id": "redux-1", "topicId": "redux", "tags": ["rtk", "slice"], "difficulty": "easy",

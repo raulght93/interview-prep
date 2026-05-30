@@ -2848,6 +2848,92 @@ MCQ.push(
     explanation: 'Estructura de una role: `tasks/main.yml`, `handlers/main.yml`, `templates/`, `files/`, `vars/main.yml`, `defaults/main.yml`, `meta/main.yml`. Al llamar `roles: [java]`, Ansible busca `roles/java/tasks/main.yml` automáticamente. `defaults/`: variables con baja prioridad (overridables). `vars/`: alta prioridad. `meta/`: dependencias de otras roles. `ansible-galaxy init java` crea la estructura vacía. Ansible Galaxy (galaxy.ansible.com) tiene miles de roles reutilizables (geerlingguy.java, etc.).',
   },
 
+  // ── storage ───────────────────────────────────────────────────────────────
+  {
+    id: 'mcq-storage-1', topicId: 'storage',
+    question: '¿Qué protocolo de acceso define el estándar de facto en object storage?',
+    options: [
+      'NFS v4 con TLS — es el estándar que usan todos los proveedores cloud modernos.',
+      'POSIX: read/write/seek sobre un filesystem montado en el SO.',
+      'La S3 API de AWS (HTTP REST): putObject, getObject, deleteObject, presignedUrl, multipart upload.',
+      'CMIS (Content Management Interoperability Services), el estándar ISO para gestión documental.',
+    ],
+    correctIndex: 2,
+    explanation: 'La S3 API de Amazon Web Services se convirtió en el estándar de facto: MinIO, Ceph RADOS, SeaweedFS Filer, Cloudflare R2 y casi todos los sistemas modernos la implementan. Las herramientas del ecosistema (AWS CLI, SDKs, Terraform aws_s3_bucket, etc.) funcionan con cualquier endpoint compatible. NFS y POSIX son protocolos de filesystem, no de object storage. CMIS es específico de sistemas de gestión documental como Documentum/Alfresco.',
+  },
+  {
+    id: 'mcq-storage-2', topicId: 'storage',
+    question: '¿Por qué una presigned URL es más segura y eficiente que hacer que el backend actúe como proxy de los ficheros?',
+    options: [
+      'Las presigned URLs cifran el contenido del fichero con AES-256, mientras que el proxy lo transmite en claro.',
+      'El backend genera una URL firmada (HMAC-SHA256) con expiración. El cliente sube/descarga directamente al storage, evitando que el backend consuma memoria/CPU/red para transferir bytes y sin exponer credenciales al cliente.',
+      'El proxy es más seguro porque permite al backend inspeccionar el contenido antes de almacenarlo.',
+      'Las presigned URLs solo funcionan para descargas; para uploads hay que usar el proxy.',
+    ],
+    correctIndex: 1,
+    explanation: 'Con proxy: el backend recibe el fichero del cliente y lo reenvía a MinIO — doble transferencia, consumo de memoria, cuello de botella de red. Con presigned URL: el backend genera `minioClient.getPresignedObjectUrl(PUT, bucket, key, 15min)` y devuelve solo la URL al cliente; el cliente hace PUT directo a MinIO. El HMAC-SHA256 garantiza que la URL no ha sido manipulada y caduca pasado el TTL. Las credenciales de MinIO nunca salen del backend.',
+  },
+  {
+    id: 'mcq-storage-3', topicId: 'storage',
+    question: '¿Qué problema de los filesystems clásicos resuelve SeaweedFS para millones de ficheros pequeños?',
+    options: [
+      'Los ficheros POSIX no pueden superar 2GB; SeaweedFS elimina esa limitación.',
+      'POSIX no soporta concurrencia de escritura; SeaweedFS la gestiona con MVCC.',
+      'El protocolo NFS añade latencia excesiva para entornos de alta frecuencia.',
+      'Cada fichero en un filesystem clásico ocupa un inode que puede no caber en RAM, provocando I/O de metadatos en cada lookup. SeaweedFS mantiene el mapa fileId→volumen en memoria y agrupa miles de ficheros en volúmenes grandes, eliminando el overhead de inodos.',
+    ],
+    correctIndex: 3,
+    explanation: 'Facebook Haystack documentó el problema: con cientos de millones de fotos pequeñas, el árbol de inodos del NAS no cabía en RAM → cada acceso requería leer metadatos de disco (3-4 I/Os solo para localizar el fichero). SeaweedFS resuelve esto: el Master server guarda `fileId→(volumeId, offset)` en memoria (lookup O(1) sin I/O), y los Volume servers almacenan los ficheros agrupados en volúmenes de ~30GB. El resultado: 1 I/O de red + 1 I/O de disco para cualquier fichero, independientemente del número total.',
+  },
+  {
+    id: 'mcq-storage-4', topicId: 'storage',
+    question: '¿Cuál es la diferencia clave entre Erasure Coding (MinIO) y replicación simple (×3) en términos de eficiencia de almacenamiento?',
+    options: [
+      'Con Erasure Coding EC 4+2, el overhead de almacenamiento es del 50% (1.5× los datos originales), frente al 200% de replicación ×3. EC tolera K fallos con menos espacio desperdiciado, a cambio de mayor CPU en lecturas y escrituras.',
+      'Erasure Coding siempre triplica los datos igual que la replicación ×3; la diferencia es solo de latencia.',
+      'La replicación ×3 usa menos CPU que Erasure Coding y es preferible en todos los casos de producción.',
+      'Erasure Coding solo funciona con drives NVMe; con HDD hay que usar replicación.',
+    ],
+    correctIndex: 0,
+    explanation: 'Replicación ×3: se guardan 3 copias idénticas → 3TB para 1TB de datos (200% overhead). Erasure Coding EC 4+2: se divide el objeto en 4 fragmentos de datos + 2 de paridad → se almacenan 6 fragmentos pero el overhead es solo 6/4 = 1.5× (50%). Con EC 4+2, MinIO puede perder cualquier 2 drives/nodos sin pérdida de datos. Trade-off: EC requiere más CPU para computar los fragmentos de paridad en cada write y para reconstruir en lecturas con fallos. Para datos fríos/backup, EC es ideal. Para alta frecuencia de pequeños writes, replicación puede ser más rápida.',
+  },
+  {
+    id: 'mcq-storage-5', topicId: 'storage',
+    question: '¿Cuándo elegirías Ceph en lugar de MinIO para un proyecto on-premises?',
+    options: [
+      'Siempre que el equipo tenga más de 5 personas de operaciones, porque Ceph escala mejor.',
+      'Cuando el proyecto solo necesita object storage S3: MinIO es más simple y adecuado.',
+      'Cuando necesitas múltiples protocolos de acceso en el mismo cluster: S3 object storage (RADOS), block storage para VMs (RBD) y filesystem POSIX distribuido (CephFS). Ceph unifica los tres sobre el mismo almacenamiento físico, aunque con alta complejidad operacional.',
+      'Cuando el presupuesto es limitado: Ceph es gratuito y MinIO tiene licencia de pago.',
+    ],
+    correctIndex: 2,
+    explanation: 'MinIO es object storage puro (S3). Si solo necesitas eso, es la elección correcta: más simple de operar, mejor rendimiento para object storage puro, documentación excelente, Operator de Kubernetes maduro. Ceph es el sistema de almacenamiento distribuido más completo: RADOS para objetos, RBD para block (Cinder en OpenStack, RWO en K8s), CephFS para filesystem distribuido. Vale la complejidad adicional cuando el mismo cluster tiene que servir a VMs con block storage, apps con object storage y workloads HPC con filesystem POSIX. MinIO también es open-source (AGPL).',
+  },
+  {
+    id: 'mcq-storage-6', topicId: 'storage',
+    question: '¿En qué se diferencia fundamentalmente Documentum de MinIO/SeaweedFS?',
+    options: [
+      'Documentum solo almacena ficheros PDF; MinIO soporta cualquier formato binario.',
+      'MinIO requiere Kubernetes; Documentum puede instalarse en servidores bare metal.',
+      'Documentum es un sistema ECM (Enterprise Content Management) con gestión de workflows, retención legal, versionado de documentos y auditoría de cumplimiento normativo (GDPR, SOX). MinIO/SeaweedFS son sistemas de almacenamiento de bytes sin semántica de contenido. Son soluciones para capas distintas del stack.',
+      'La diferencia es solo de rendimiento: Documentum procesa 10× menos ficheros por segundo que MinIO.',
+    ],
+    correctIndex: 2,
+    explanation: 'MinIO responde a "¿cómo guardo y sirvo eficientemente bytes binarios?" — es una capa de infraestructura. Documentum responde a "¿cómo gestiono documentos corporativos con ciclo de vida, aprobaciones, retención y cumplimiento?" — es una capa de negocio. Documentum tiene su propio sistema de almacenamiento de ficheros internamente (puede usar NAS, HDFS o cloud), pero lo que lo define son los workflows de aprobación, las políticas de retención (retener 7 años por requisito fiscal), el versionado de documentos con metadata estructurada, y la integración con directorios LDAP/AD. Alfresco Content Services es la alternativa open-source más conocida.',
+  },
+  {
+    id: 'mcq-storage-7', topicId: 'storage',
+    question: '¿Qué es el multipart upload en S3/MinIO y cuándo es necesario?',
+    options: [
+      'Es un mecanismo para subir múltiples ficheros distintos en una sola petición HTTP, reduciendo el overhead de conexión.',
+      'Solo funciona para ficheros superiores a 5GB; para ficheros menores hay que usar el upload simple.',
+      'Es una extensión propietaria de AWS S3 que MinIO no implementa aún.',
+      'Divide un fichero grande en partes de mínimo 5MB, las sube en paralelo o en secuencia, y el servidor las ensambla al final. Necesario para ficheros >100MB (reduce el riesgo de timeout/retry), y obligatorio >5GB en S3. Permite reanudar uploads interrumpidos retomando solo las partes fallidas.',
+    ],
+    correctIndex: 3,
+    explanation: 'El flujo de multipart: 1) `CreateMultipartUpload` → recibe `uploadId`. 2) `UploadPart` para cada parte (≥5MB excepto la última): se pueden subir en paralelo con hasta 10.000 partes. 3) `CompleteMultipartUpload` con la lista de partes → el servidor ensambla. Si falla una parte, solo se reintenta esa parte. Para un fichero de 1GB con partes de 100MB: 10 partes en paralelo → ~10× más rápido que upload secuencial. Los SDKs (AWS SDK, MinIO SDK) gestionan el multipart automáticamente a partir de un umbral (típicamente 8-16MB).',
+  },
+
   // ── redux ─────────────────────────────────────────────────────────────────
   {
     id: 'mcq-redux-1', topicId: 'redux',

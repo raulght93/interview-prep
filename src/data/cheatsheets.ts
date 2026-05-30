@@ -353,6 +353,20 @@ export const CHEATSHEETS: CheatSheet[] = [
     ],
   },
   {
+    topicId: 'storage',
+    points: [
+      'Object storage: objetos (datos + metadatos + clave) en buckets. Sin jerarquía real. Acceso HTTP/REST.',
+      'S3 API: estándar de facto. putObject/getObject/deleteObject/presignedUrl/multipart/versioning/ACLs.',
+      'MinIO: S3-compatible on-prem. Erasure Coding (Reed-Solomon). CRD Tenant en Kubernetes.',
+      'SeaweedFS: millones de ficheros pequeños. Master (metadatos) + Volume servers (datos). Filer para S3/POSIX.',
+      'Presigned URLs: URL firmada HMAC-SHA256 con TTL. El cliente sube/descarga directo al storage. Seguro y eficiente.',
+      'Ceph: block + object (RADOS) + file (CephFS). Máxima flexibilidad pero alta complejidad operacional.',
+      'Documentum: ECM/GED corporativo con workflows, retención y auditoría. CMIS. Mucho más que almacenamiento.',
+      'Agata pattern: metadata en BBDD relacional (búsquedas/relaciones) + binarios en object store (bytes).',
+      'Multipart upload: ficheros grandes se dividen en partes (≥5MB), se suben en paralelo, se ensamblan en el servidor.',
+    ],
+  },
+  {
     topicId: 'microfrontend',
     points: [
       'Module Federation (Webpack 5): host consume remotes compilados independientemente en runtime.',
