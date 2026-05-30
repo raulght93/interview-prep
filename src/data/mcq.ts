@@ -2848,6 +2848,92 @@ MCQ.push(
     explanation: 'Estructura de una role: `tasks/main.yml`, `handlers/main.yml`, `templates/`, `files/`, `vars/main.yml`, `defaults/main.yml`, `meta/main.yml`. Al llamar `roles: [java]`, Ansible busca `roles/java/tasks/main.yml` automáticamente. `defaults/`: variables con baja prioridad (overridables). `vars/`: alta prioridad. `meta/`: dependencias de otras roles. `ansible-galaxy init java` crea la estructura vacía. Ansible Galaxy (galaxy.ansible.com) tiene miles de roles reutilizables (geerlingguy.java, etc.).',
   },
 
+  // ── python ────────────────────────────────────────────────────────────────
+  {
+    id: 'mcq-python-1', topicId: 'python',
+    question: '¿Qué devuelve `df["col"]` en Pandas y en qué se diferencia de `df[["col"]]`?',
+    options: [
+      'Ambas formas devuelven un DataFrame de una columna; la diferencia es solo de sintaxis.',
+      'Una copia profunda del DataFrame filtrada por la columna especificada.',
+      '`df["col"]` devuelve una **Series** (1D). `df[["col"]]` devuelve un **DataFrame** de una columna (2D). Las operaciones Series vs DataFrame difieren: `.str`, `.dt`, métodos vectorizados funcionan en Series; join, merge, to_csv necesitan DataFrame.',
+      'La versión con doble corchete es la forma legacy de Pandas 0.x; la versión moderna usa `df["col"]` siempre.',
+    ],
+    correctIndex: 2,
+    explanation: '`type(df["edad"])` → `Series`. `type(df[["edad"]])` → `DataFrame`. Importa cuando quieres pasar datos a una función que espera específicamente uno u otro tipo. Por ejemplo, sklearn acepta DataFrames para features; muchos métodos de Pandas como `concat`, `merge` trabajan con DataFrames. `df.assign(nueva=df["a"] + df["b"])` trabaja con Series.',
+  },
+  {
+    id: 'mcq-python-2', topicId: 'python',
+    question: '¿Qué ventaja tiene Pydantic v2 sobre v1, y qué modelo nuevo de validación introduce?',
+    options: [
+      'Pydantic v2 migra la validación de Python puro a un core en Rust, siendo 10-50× más rápido. Introduce `model_validator` y `field_validator` (decoradores en lugar de `@validator`), y `model_dump()` reemplaza a `dict()`.',
+      'Pydantic v2 soporta async validation de forma nativa, mientras que v1 era completamente síncrono.',
+      'La principal mejora de v2 es el soporte nativo de bases de datos SQL sin ORM adicional.',
+      'Pydantic v2 solo puede usarse con FastAPI 0.100+; no es compatible con versiones anteriores del framework.',
+    ],
+    correctIndex: 0,
+    explanation: 'El core de validación de Pydantic v2 está escrito en Rust (pydantic-core). Cambios de API: `@validator` → `@field_validator`, `@root_validator` → `@model_validator`, `.dict()` → `.model_dump()`, `.schema()` → `.model_json_schema()`. FastAPI adoptó Pydantic v2 en la v0.100.0. La mejora de rendimiento es especialmente notable en APIs con muchas validaciones por segundo.',
+  },
+  {
+    id: 'mcq-python-3', topicId: 'python',
+    question: '¿Cuándo usarías `groupby().agg()` en lugar de múltiples `groupby().sum()` / `groupby().mean()`?',
+    options: [
+      'Solo cuando el DataFrame tiene más de 10 columnas; para DataFrames pequeños las llamadas separadas son más eficientes.',
+      'Cuando necesitas aplicar funciones distintas a distintas columnas en una sola pasada: `df.groupby("ciudad").agg({"ventas": "sum", "ticket": "mean", "clientes": "count"})`. Más legible y eficiente que tres llamadas separadas que cada una recorre el DataFrame.',
+      'Para poder usar funciones personalizadas (lambdas); con sum/mean no se pueden usar lambdas.',
+      '`agg()` es equivalente a llamadas separadas; no hay diferencia en rendimiento ni en funcionalidad.',
+    ],
+    correctIndex: 1,
+    explanation: '`agg()` permite un diccionario `{columna: función}` o una lista de funciones por columna. Ejemplos: `agg({"v": ["sum", "mean"]})`, `agg({"v": lambda x: x.quantile(0.9)})`. El resultado es un solo DataFrame con todas las agregaciones. Internamente Pandas optimiza la pasada sobre los grupos. Las lambdas en `agg` pueden ser menos eficientes que funciones nativas NumPy, pero dan flexibilidad total.',
+  },
+  {
+    id: 'mcq-python-4', topicId: 'python',
+    question: '¿Qué hace exactamente el `yield` en una dependencia de FastAPI (`Depends`)?',
+    options: [
+      'Permite que la dependencia retorne múltiples valores como un generador Python estándar.',
+      'Indica que la función es asíncrona y debe awaitearse antes de usarse en el handler.',
+      'Ejecuta el código antes del yield al inicio del request y el código después del yield al finalizar (cleanup). FastAPI gestiona el ciclo de vida automáticamente, cerrando conexiones aunque el handler lance una excepción.',
+      'Es una forma de cache: FastAPI reutiliza el mismo valor del yield entre requests del mismo cliente.',
+    ],
+    correctIndex: 2,
+    explanation: '`def get_db(): db = SessionLocal(); try: yield db; finally: db.close()` — FastAPI llama a la función generadora, la avanza hasta el `yield` para obtener el valor, lo inyecta en el handler, y tras finalizar (con o sin excepción) avanza el generador hasta el fin ejecutando el bloque `finally`. Esto garantiza que la sesión DB siempre se cierra. Para versiones async: `async def get_db(): async with AsyncSessionLocal() as session: yield session`.',
+  },
+  {
+    id: 'mcq-python-5', topicId: 'python',
+    question: '¿Qué es el prompt caching de Anthropic y cómo afecta al coste de las llamadas?',
+    options: [
+      'Cachea las respuestas del modelo para peticiones idénticas, eliminando el procesamiento completamente.',
+      'Solo aplica al primer mensaje del historial de conversación; los siguientes mensajes siempre se procesan.',
+      'Es un sistema de caché a nivel de red (CDN) transparente al desarrollador.',
+      'Permite marcar bloques del prompt (system, tool definitions) con `cache_control: ephemeral`. Si el mismo bloque aparece en requests posteriores, el modelo lo lee desde caché en lugar de reprocesarlo, reduciendo el coste de esos tokens en ~90%. El caché dura 5 minutos y requiere que el bloque tenga ≥1024 tokens.',
+    ],
+    correctIndex: 3,
+    explanation: 'El prompt caching de Anthropic funciona a nivel de prefijo: si envías el mismo system prompt largo en múltiples llamadas, el modelo solo procesa los tokens de caché la primera vez. Los tokens de "cache read" cuestan ~0.10$/MTok vs ~3$/MTok de tokens normales de entrada (Sonnet 4.5). Ver `usage.cache_read_input_tokens` en la respuesta para saber si el caché se usó. Muy útil para chatbots con system prompts largos o RAG con documentos de contexto.',
+  },
+  {
+    id: 'mcq-python-6', topicId: 'python',
+    question: '¿Qué son los type hints en Python y cómo los usa Pydantic para validación?',
+    options: [
+      'Los type hints son solo documentación; Python los ignora completamente en tiempo de ejecución.',
+      'Pydantic lee los type hints de los atributos del modelo mediante `__annotations__` e introspección, generando validadores automáticos: `str` → valida que sea cadena (o convierte), `int` → valida/convierte, `list[str]` → valida lista de strings, `Optional[str]` → acepta None. Sin type hints, Pydantic no puede generar la validación.',
+      'Los type hints son obligatorios en Python 3.12+ y el intérprete los valida en runtime.',
+      'Pydantic usa los type hints solo para generar el JSON Schema de OpenAPI, no para validar datos.',
+    ],
+    correctIndex: 1,
+    explanation: 'Python evalúa los type hints en `__annotations__` del objeto. Pydantic construye internamente un "validator" por cada campo según su tipo anotado. `name: str` → intenta convertir a str si no lo es. `age: int = Field(gt=0)` → valida que sea entero y mayor que 0. `email: EmailStr` → valida formato email. Esto es lo que hace que FastAPI funcione: los type hints en los parámetros del path/body son la única especificación necesaria. `from __future__ import annotations` hace que Python evalúe los hints de forma lazy (útil para referencias circulares).',
+  },
+  {
+    id: 'mcq-python-7', topicId: 'python',
+    question: '¿Cuál es la diferencia entre `pd.merge()` y `df.join()` para combinar DataFrames?',
+    options: [
+      'Son equivalentes; `join` es simplemente un alias de `merge` con menos parámetros.',
+      '`join` une siempre por el índice de ambos DataFrames, mientras que `merge` permite especificar columnas arbitrarias como clave con `on=`, `left_on=`, `right_on=`. `merge` es más flexible para joins SQL-estilo; `join` es conveniente cuando el índice ya es la clave de unión.',
+      '`merge` solo funciona con DataFrames del mismo tamaño; `join` funciona con DataFrames de distinto tamaño.',
+      '`join` soporta inner/outer/left/right pero `merge` solo soporta inner join.',
+    ],
+    correctIndex: 1,
+    explanation: '`pd.merge(df1, df2, on="id", how="left")` — la forma más general. `df1.join(df2, on="id")` — conveniente cuando el índice ya es la clave. Internamente `join` llama a `merge` con `left_index=True` o `right_index=True`. Ambos soportan inner/outer/left/right. `concat` es distinto: apila DataFrames vertical u horizontalmente sin unir por clave. Para joins SQL complejos con múltiples condiciones: `merge` con `left_on`/`right_on` distintos o con `pd.merge(..., left_on=["a","b"], right_on=["x","y"])`.',
+  },
+
   // ── storage ───────────────────────────────────────────────────────────────
   {
     id: 'mcq-storage-1', topicId: 'storage',

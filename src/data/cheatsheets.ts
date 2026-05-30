@@ -353,6 +353,20 @@ export const CHEATSHEETS: CheatSheet[] = [
     ],
   },
   {
+    topicId: 'python',
+    points: [
+      'Pandas: DataFrame = tabla de Series. df["col"], df.loc[label], df.iloc[pos], df[mask].',
+      'Limpieza: dropna(), fillna(), df.astype(), rename(), str.strip()/lower()/replace().',
+      'Agrupación: groupby("col").agg({"v": "sum"}). merge(df1, df2, on="id", how="left").',
+      'FastAPI: @app.get/post/put/delete + Pydantic BaseModel → validación + OpenAPI automáticos.',
+      'Depends(): inyección de dependencias (get_db, get_current_user). HTTPException(status_code, detail).',
+      'async def + await: FastAPI es ASGI. Uvicorn como servidor. Background tasks con BackgroundTasks.',
+      'Pydantic v2: type hints como especificación. model_validator, field_validator. 10-50× más rápido que v1.',
+      'Anthropic SDK: client.messages.create(model, messages, system). cache_control para prompt caching.',
+      'Typing: list[T], dict[K,V], Optional[T] = T|None, Union, TypeVar, Protocol. from __future__ import annotations.',
+    ],
+  },
+  {
     topicId: 'storage',
     points: [
       'Object storage: objetos (datos + metadatos + clave) en buckets. Sin jerarquía real. Acceso HTTP/REST.',

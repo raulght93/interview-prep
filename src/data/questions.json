@@ -190,6 +190,13 @@
       "risk": "medio"
     },
     {
+      "id": "python",
+      "emoji": "🐍",
+      "name": "Python / FastAPI / Pandas",
+      "description": "Pandas DataFrames, FastAPI con Pydantic, async/await, SDK de Anthropic, type hints.",
+      "risk": "bajo"
+    },
+    {
       "id": "storage",
       "emoji": "🪣",
       "name": "Object Storage / MinIO / SeaweedFS",
@@ -3374,6 +3381,31 @@
       "id": "cicd-5", "topicId": "cicd", "tags": ["gitops", "argocd"], "difficulty": "medium",
       "question": "¿Qué es GitOps y cómo lo aplicas en Kubernetes?",
       "answer": "**GitOps** es un modelo operacional donde el estado deseado del sistema se declara en Git, y una herramienta lo sincroniza automáticamente con el estado real. Ningún cambio manual en producción: todo via PR y merge.\n\n```\nFlujo GitOps:\n\nDev → PR (actualiza Helm chart / K8s manifests)\n     → Code Review\n     → Merge en main\n     → ArgoCD detecta el cambio en el repo\n     → ArgoCD aplica los cambios al cluster\n     → Rollout del nuevo Deployment\n```\n\n**ArgoCD** monitorea el repo de configuración y sincroniza el cluster:\n```yaml\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: agata-connector\nspec:\n  source:\n    repoURL: https://git.agata.local/infra/k8s-config\n    targetRevision: main\n    path: apps/agata-connector\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: agata-prod\n  syncPolicy:\n    automated:                    # auto-sync cuando cambia el repo\n      prune: true                 # elimina recursos eliminados del repo\n      selfHeal: true              # corrige divergencias manuales en el cluster\n```\n\n**Ventajas**: auditoría completa (Git history = historial de cambios en prod), rollback = `git revert`, PR = puerta de revisión antes de producción, sin kubectl manual con permisos amplios.\n\n**Separar repos**: uno para el código de la app, otro para la configuración de infra/K8s (o carpetas separadas en el mismo mono-repo)."
+    },
+    {
+      "id": "python-1", "topicId": "python", "tags": ["pandas", "dataframe"], "difficulty": "easy",
+      "question": "¿Cuál es la diferencia entre `df.loc` y `df.iloc` en Pandas?",
+      "answer": "`df.loc` selecciona por **label** (nombre de índice o columna): `df.loc[0:5, 'nombre']`.\n`df.iloc` selecciona por **posición** entera (0-based): `df.iloc[0:5, 2]`.\n\n```python\ndf = pd.DataFrame({'a': [10,20,30]}, index=['x','y','z'])\n\ndf.loc['x':'y', 'a']   # filas 'x' e 'y' (inclusive), columna 'a' → [10, 20]\ndf.iloc[0:2, 0]        # filas 0 y 1 (exclusive end), col 0 → [10, 20]\n```\n\n`loc` es inclusivo en ambos extremos del slice. `iloc` sigue la semántica Python estándar (end exclusivo).\n\nPara seleccionar una celda: `df.at['x','a']` (label, más rápido que loc) y `df.iat[0,0]` (posición, más rápido que iloc)."
+    },
+    {
+      "id": "python-2", "topicId": "python", "tags": ["fastapi", "pydantic"], "difficulty": "easy",
+      "question": "¿Cómo valida FastAPI automáticamente los datos de entrada y salida?",
+      "answer": "FastAPI usa **Pydantic BaseModel** para definir la estructura esperada. Los type hints se convierten en validación automática + JSON Schema + docs OpenAPI:\n\n```python\nfrom pydantic import BaseModel, Field\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\nclass ProductIn(BaseModel):\n    name: str\n    price: float = Field(gt=0, description='Precio positivo')\n    tags: list[str] = []\n\nclass ProductOut(BaseModel):\n    id: int\n    name: str\n    price: float\n\n@app.post('/products', response_model=ProductOut, status_code=201)\nasync def create(product: ProductIn):\n    # FastAPI ya validó que price > 0 y name es str\n    new = db.insert(product.model_dump())\n    return new  # FastAPI serializa con ProductOut (excluye campos extra)\n```\n\nSi la request no cumple el schema → FastAPI devuelve automáticamente **422 Unprocessable Entity** con el detalle del error. `response_model` filtra los campos del response (no expone campos internos como contraseñas)."
+    },
+    {
+      "id": "python-3", "topicId": "python", "tags": ["pandas", "limpieza"], "difficulty": "medium",
+      "question": "¿Cómo limpiar y preparar un DataFrame para análisis: NaN, tipos y filtrado?",
+      "answer": "```python\nimport pandas as pd\n\ndf = pd.read_csv('datos.csv')\n\n# 1. Inspeccionar\ndf.info()        # tipos de columna + valores no-nulos\ndf.isnull().sum()  # contar NaN por columna\n\n# 2. Limpiar NaN\ndf = df.dropna(subset=['precio', 'nombre'])  # eliminar filas si NaN en columnas críticas\ndf['descuento'] = df['descuento'].fillna(0)  # rellenar NaN con 0\n\n# 3. Tipos correctos\ndf['fecha'] = pd.to_datetime(df['fecha'])\ndf['precio'] = df['precio'].astype(float)\n\n# 4. Limpiar strings\ndf['nombre'] = df['nombre'].str.strip().str.lower()\n\n# 5. Filtrar\ndf = df[df['precio'] > 0]                    # solo precios positivos\ndf = df[(df['activo'] == True) & (df['stock'] > 0)]\n\n# 6. Renombrar\ndf = df.rename(columns={'nm': 'nombre', 'pr': 'precio'})\n\n# 7. Reset index tras filtros\ndf = df.reset_index(drop=True)\n```\n\n**Regla**: nunca mutar el DataFrame original con `inplace=True` en operaciones importantes — asignar a nueva variable permite deshacer cambios."
+    },
+    {
+      "id": "python-4", "topicId": "python", "tags": ["fastapi", "async", "dependencias"], "difficulty": "medium",
+      "question": "¿Qué es `Depends()` en FastAPI y cómo se usa para inyectar una sesión de base de datos?",
+      "answer": "**`Depends()`** es el sistema de inyección de dependencias de FastAPI. Define lógica compartida reutilizable (conexiones DB, autenticación, configuración) que se ejecuta antes del handler:\n\n```python\nfrom fastapi import Depends, FastAPI\nfrom sqlalchemy.orm import Session\nfrom database import SessionLocal\n\ndef get_db():\n    db = SessionLocal()\n    try:\n        yield db          # yield → la sesión se cierra automáticamente al finalizar\n    finally:\n        db.close()\n\napp = FastAPI()\n\n@app.get('/users/{user_id}')\nasync def get_user(user_id: int, db: Session = Depends(get_db)):\n    return db.query(User).filter(User.id == user_id).first()\n\n# Dependencias anidadas y reutilizables:\ndef get_current_user(token: str = Depends(oauth2_scheme), db = Depends(get_db)):\n    user = verify_token(token, db)\n    if not user:\n        raise HTTPException(401, 'Unauthorized')\n    return user\n\n@app.get('/me')\nasync def me(user: User = Depends(get_current_user)):\n    return user\n```\n\nFastAPI resuelve las dependencias automáticamente, las cachea por request y gestiona la limpieza de los `yield`."
+    },
+    {
+      "id": "python-5", "topicId": "python", "tags": ["ia", "anthropic", "llm"], "difficulty": "easy",
+      "question": "¿Cómo llamar al API de Anthropic desde Python con prompt caching y streaming?",
+      "answer": "```python\nimport anthropic\n\nclient = anthropic.Anthropic()  # usa ANTHROPIC_API_KEY del entorno\n\n# Llamada básica con prompt caching en el system prompt\nresponse = client.messages.create(\n    model='claude-sonnet-4-6',\n    max_tokens=1024,\n    system=[{\n        'type': 'text',\n        'text': system_prompt_largo,   # ≥1024 tokens para que tenga sentido cachear\n        'cache_control': {'type': 'ephemeral'}  # marca este bloque para caché\n    }],\n    messages=[{'role': 'user', 'content': pregunta}]\n)\nprint(response.content[0].text)\nprint(response.usage)  # input_tokens, output_tokens, cache_creation/read_input_tokens\n\n# Streaming (ideal para UI en tiempo real)\nwith client.messages.stream(\n    model='claude-sonnet-4-6',\n    max_tokens=1024,\n    messages=[{'role': 'user', 'content': 'Explica X'}]\n) as stream:\n    for text in stream.text_stream:\n        print(text, end='', flush=True)\n```\n\n**Prompt caching**: si el system prompt es largo (>1024 tokens) y se repite entre llamadas, el caché lo reutiliza. Los tokens cacheados cuestan ~90% menos. Ver `cache_read_input_tokens` en `response.usage`."
     },
     {
       "id": "storage-1", "topicId": "storage", "tags": ["s3", "conceptos"], "difficulty": "easy",

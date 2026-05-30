@@ -204,6 +204,103 @@ Los **traces** son el viaje de una petición por varios servicios, representado 
 **SLI/SLO/SLA.** SLI es la métrica (latencia, disponibilidad); SLO es tu objetivo interno ("99.9% < 200ms en 30 días"); SLA el contrato externo con consecuencias. El **error budget** (1 - SLO) define cuánto error te permites gastar; si te lo gastas, congelas releases y priorizas fiabilidad. Es el contrapeso entre velocidad y estabilidad — el lenguaje SRE para decidir cuándo seguir entregando y cuándo invertir en infra.`,
   },
   {
+    topicId: 'python',
+    body: `**Python para IA y datos** se apoya en tres pilares: el lenguaje en sí (tipado dinámico, comprehensions, generators, decorators), las librerías de datos (**NumPy/Pandas**) y los frameworks de API (**FastAPI**). Es el estándar en el ecosistema de ML/IA por el tamaño de su comunidad y la madurez de las librerías.
+
+**Pandas** es la librería de análisis de datos tabulares. Dos estructuras centrales:
+- **Series**: array unidimensional indexado (columna o fila).
+- **DataFrame**: tabla de Series con índice de filas. Cada columna es una Series.
+
+Operaciones más usadas:
+\`\`\`python
+import pandas as pd
+
+df = pd.read_csv("datos.csv")          # leer CSV
+df.head(5)                             # primeras 5 filas
+df.info()                              # tipos + valores no-nulos
+df.describe()                          # estadísticas descriptivas
+
+# Selección
+df["col"]                              # Serie
+df[["col1", "col2"]]                   # sub-DataFrame
+df.loc[0:5, "col"]                     # por label
+df.iloc[0:5, 2]                        # por posición
+
+# Filtrado
+df[df["edad"] > 30]
+df[(df["edad"] > 30) & (df["ciudad"] == "Madrid")]
+
+# Transformación
+df["edad_norm"] = (df["edad"] - df["edad"].mean()) / df["edad"].std()
+df.rename(columns={"old": "new"}, inplace=True)
+df.dropna(subset=["col"])              # eliminar NaN en col
+df.fillna(0)                           # rellenar NaN con 0
+
+# Agrupación
+df.groupby("ciudad")["ventas"].sum()
+df.groupby("ciudad").agg({"ventas": "sum", "clientes": "count"})
+
+# Merge / Join
+pd.merge(df1, df2, on="id", how="left")
+\`\`\`
+
+**FastAPI** es un framework web asíncrono basado en **ASGI** (Starlette + Pydantic). Características clave:
+- Validación automática de request/response con **Pydantic** (type hints → JSON Schema → OpenAPI docs).
+- Asíncrono nativo (\`async def\`) con Uvicorn/Gunicorn.
+- Inyección de dependencias vía \`Depends()\`.
+- Generación automática de docs en \`/docs\` (Swagger UI) y \`/redoc\`.
+
+\`\`\`python
+from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class UserIn(BaseModel):
+    name: str
+    age: int
+
+class UserOut(BaseModel):
+    id: int
+    name: str
+
+@app.post("/users", response_model=UserOut, status_code=201)
+async def create_user(user: UserIn, db: Session = Depends(get_db)):
+    return db.create(user)
+
+@app.get("/users/{user_id}", response_model=UserOut)
+async def get_user(user_id: int):
+    user = db.get(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+\`\`\`
+
+**Python + IA / LLMs**: el SDK de Anthropic (y OpenAI) es Python-first. Patrones comunes:
+\`\`\`python
+import anthropic
+
+client = anthropic.Anthropic()
+
+# Llamada básica con prompt caching (Sonnet 4.6)
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system=[{"type": "text", "text": system_prompt,
+             "cache_control": {"type": "ephemeral"}}],  # prompt caching
+    messages=[{"role": "user", "content": user_message}]
+)
+print(response.content[0].text)
+
+# Streaming
+with client.messages.stream(model=..., ...) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+\`\`\`
+
+**Type hints y buenas prácticas**: desde Python 3.10+ el sistema de tipos es robusto. \`from __future__ import annotations\` para usar tipos forward-referenced. \`TypeVar\`, \`Generic[T]\`, \`Protocol\` para code genérico. **Pydantic v2** usa Rust internamente (10-50× más rápido que v1) y es la base de FastAPI y LangChain.`,
+  },
+  {
     topicId: 'storage',
     body: `**Almacenamiento de objetos**: los sistemas de object storage guardan datos como **objetos** (datos binarios + metadatos + clave única) en **buckets** planos, sin jerarquía de directorios real. El acceso es vía API HTTP/REST, no sistemas de ficheros (NFS, CIFS). El estándar de facto es la **S3 API de AWS**: cualquier sistema que la implemente es compatible con el ecosistema de herramientas S3.
 
